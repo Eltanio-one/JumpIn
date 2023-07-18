@@ -13,13 +13,20 @@ class User:
     """class for each individual user"""
 
     def __init__(
-        self, username: str, password: str, name: str, dob: str, languages: list
+        self,
+        username: str,
+        email: str,
+        name: str,
+        date_of_birth: str,
+        password: str,
+        languages: list,
     ):
         self.username = username
+        self.email = email
+        self.name = name
+        self.date_of_birth = date_of_birth
         self.password = password
         self.hashed_password = None
-        self.name = name
-        self.dob = dob
         self.languages = languages
         self.friends = []
         self.usage = {}
@@ -34,7 +41,7 @@ class User:
         self.usage[machine] += amount
 
     def __repr__(self):
-        return f"User ID: {self.user_id}, Name: {self.name}, Date of Birth: {self.dob}, Primary Language: {self.language}"
+        return f"Name: {self.name}, Date of Birth: {self.date_of_birth}, Languages: {self.languages}"
 
 
 class Gym:

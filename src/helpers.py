@@ -1,6 +1,7 @@
 from functools import wraps
 from flask import redirect, Flask, session
-from psycopg2 import connect, DatabaseError
+
+# from psycopg2 import connect, DatabaseError
 
 
 # define login_required to ensure that pages can't be accessed without login
@@ -21,61 +22,61 @@ def login_required(f):
     return wrap
 
 
-def fetch_row(query: str, arguments: tuple = None) -> list:
-    try:
-        conn = connect(
-            host="host.docker.internal",
-            user="postgres",
-            password="postgres",
-            dbname="to-do",
-            port=5432,
-        )
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute(query, arguments)
-                rows = cur.fetchone()
-                return rows
-    except (Exception, DatabaseError) as error:
-        print(error)
+# def fetch_row(query: str, arguments: tuple = None) -> list:
+#     try:
+#         conn = connect(
+#             host="host.docker.internal",
+#             user="postgres",
+#             password="postgres",
+#             dbname="to-do",
+#             port=5432,
+#         )
+#         with conn:
+#             with conn.cursor() as cur:
+#                 cur.execute(query, arguments)
+#                 rows = cur.fetchone()
+#                 return rows
+#     except (Exception, DatabaseError) as error:
+#         print(error)
 
 
-def fetch_rows(query: str, arguments: tuple = None) -> list:
-    try:
-        conn = connect(
-            host="host.docker.internal",
-            user="postgres",
-            password="postgres",
-            dbname="to-do",
-            port=5432,
-        )
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute(query, arguments)
-                rows = cur.fetchall()
-                return rows
-    except (Exception, DatabaseError) as error:
-        print(error)
+# def fetch_rows(query: str, arguments: tuple = None) -> list:
+#     try:
+#         conn = connect(
+#             host="host.docker.internal",
+#             user="postgres",
+#             password="postgres",
+#             dbname="to-do",
+#             port=5432,
+#         )
+#         with conn:
+#             with conn.cursor() as cur:
+#                 cur.execute(query, arguments)
+#                 rows = cur.fetchall()
+#                 return rows
+#     except (Exception, DatabaseError) as error:
+#         print(error)
 
 
-def modify_rows(query: str, arguments: tuple = None) -> None:
-    try:
-        conn = connect(
-            host="host.docker.internal",
-            user="postgres",
-            password="postgres",
-            dbname="to-do",
-            port=5432,
-        )
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute(query, arguments)
-                conn.commit()
-    except (Exception, DatabaseError) as error:
-        print(error)
+# def modify_rows(query: str, arguments: tuple = None) -> None:
+#     try:
+#         conn = connect(
+#             host="host.docker.internal",
+#             user="postgres",
+#             password="postgres",
+#             dbname="to-do",
+#             port=5432,
+#         )
+#         with conn:
+#             with conn.cursor() as cur:
+#                 cur.execute(query, arguments)
+#                 conn.commit()
+#     except (Exception, DatabaseError) as error:
+#         print(error)
 
 
-def reformat_rows(rows: tuple) -> list:
-    return_rows = []
-    for row in rows:
-        return_rows.append("".join(row))
-    return return_rows
+# def reformat_rows(rows: tuple) -> list:
+#     return_rows = []
+#     for row in rows:
+#         return_rows.append("".join(row))
+#     return return_rows

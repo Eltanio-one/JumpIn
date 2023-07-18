@@ -2,8 +2,9 @@ from classes import Machine, User, Gym, Sesh
 from flask import Flask, Response, render_template, session, request, redirect, flash
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import login_required, modify_rows
-from psycopg2 import connect, DatabaseError
+from helpers import login_required
+
+# from psycopg2 import connect, DatabaseError
 
 app = Flask(__name__)
 
@@ -44,36 +45,27 @@ def register():
     elif request.method == "POST":
         new_user = User(
             username=request.form.get("username"),
-            password=request.form.get("password"),
+            email=request.form.get("email"),
             name=request.form.get("name"),
-            dob=request.form.get("dob"),
+            date_of_birth=request.form.get("dob"),
+            password=request.form.get("password"),
             languages=request.form.get("languages"),
         )
-        confirmation = (request.form.get("confirmation"),)
 
-        if not new_user.username:
-            flash("Please enter a username")
-            return render_template("register.html")
+        for key, val in vars(new_user).items():
+            if not val:
+                if key == "date_of_birth":
+                    flash(f'Please enter a {key.replace("_", " ")}')
+                    return render_template("register.html")
+                flash(f"Please enter a {key}")
+                return render_template("register.html")
 
-        if not new_user.password:
-            flash("Please enter a password")
-            return render_template("register.html")
+        confirmation = request.form.get("confirmation")
 
         if not confirmation:
             flash("Please confirm your password")
             return render_template("register.html")
 
-        if not new_user.name:
-            flash("Please enter your name")
-            return render_template("register.html")
-
-        if not new_user.dob:
-            flash("Please enter your date of birth")
-            return render_template("register.html")
-
-        if not new_user.languages:
-            flash("Please enter at least one language")
-            return render_template("register.html")
         # conn = None
         # try:
         #     conn = connect(
