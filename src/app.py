@@ -1,4 +1,4 @@
-from classes import Machine, User, Gym, Sesh
+from classes import Machine, User, Gym, Sesh, UserService
 from flask import Flask, Response, render_template, session, request, redirect, flash
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -43,7 +43,8 @@ def register():
         return render_template("register.html")
 
     elif request.method == "POST":
-        new_user = User(
+        user_service = UserService
+        new_user = user_service.register_user(
             username=request.form.get("username"),
             email=request.form.get("email"),
             name=request.form.get("name"),
@@ -57,6 +58,8 @@ def register():
                 if key == "date_of_birth":
                     flash(f'Please enter a {key.replace("_", " ")}')
                     return render_template("register.html")
+                if key in ["friends", "usage", "hashed_password", "gym"]:
+                    continue
                 flash(f"Please enter a {key}")
                 return render_template("register.html")
 
@@ -100,6 +103,8 @@ def register():
         # modify_rows(
         #     """INSERT INTO users (username, hash) VALUES (%s, %s)""", (username, hash)
         # )
+
+        # delete new_user variable from memory
 
         return redirect("/")
 
