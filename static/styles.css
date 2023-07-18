@@ -1,0 +1,113 @@
+.error_head {
+    text-align: center;
+    border: 2pt dashed;
+    border-color: crimson;
+    width: 400px;
+    color: crimson;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.title_one {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#index_welcome {
+    margin-top: 250px;
+    font-family: 'Gill Sans', sans-serif;
+}
+
+#navbar {
+    font-family: 'Gill Sans', serif;
+    color: forestgreen;
+}
+
+#recaptcha {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.noteTable {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#clear_list {
+    margin-top: 350px;
+}
+
+.linethrough {
+    text-decoration: line-through;
+    color: slategrey
+}
+
+#message {
+    width: 300px;
+}
+
+#email {
+    width: 200px;
+}
+
+.about_p {
+    width: 500px;
+    font-family: 'Gill Sans', sans-serif;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+* {
+    font-family: 'Gill Sans', sans-serif;
+}
+
+input[type="text"],
+input[type="date"] {
+    color: cornflowerblue;
+    border: 1pt solid;
+    border-color: deepskyblue;
+    background-color: none;
+}
+
+.button_jinja {
+    color: crimson;
+    background-color: none;
+    border: none;
+    background: none;
+}
+
+.square_button {
+    background-color: bisque;
+    border-color: coral;
+    border: 1pt solid;
+
+}
+
+.square_button:hover {
+    background-color: aquamarine;
+    border-color: aqua;
+    transition: 0.4s;
+}
+
+.today_row {
+    color: black;
+    font-family: 'Lucida grande';
+}
+
+.table_one {
+    color: black;
+    font-family: 'Lucida grande';
+}
+
+.today_row:hover {
+    color: chartreuse;
+    transition: 0.2s;
+}
+
+.table_one:hover {
+    color: chartreuse;
+    transition: 0.2s;
+}
