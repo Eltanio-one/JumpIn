@@ -1,0 +1,64 @@
+{% extends "layout_gym.html" %}
+
+{% block title %} Profile {% endblock %}
+
+{% block main %}
+
+<h2 class="title_one">Opening Times</h2>
+<p></p>
+<script async src="https://www.google.com/recaptcha/api.js"></script>
+<script>
+    function onSubmit(token) {
+        document.getElementById("login_form").submit();
+    }
+</script>
+<p>Enter your opening times so your members know when to attend!</p>
+<form id="login_form" action="/gym_times" method="post">
+    <div class="mb-3">
+        Monday
+        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="monday_open" name="monday_open"
+            type="time">until<input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="monday_close"
+            name="monday_close" type="time">
+    </div>
+    <div class="mb-3">
+        Tuesday
+        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="tuesday_open" name="tuesday_open"
+            type="time">until<input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="tuesday_close"
+            name="tuesday_close" type="time">
+    </div>
+    <div class="mb-3">
+        Wednesday
+        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="wednesday_open"
+            name="wednesday_open" type="time">until<input autocomplete="off" autofocus
+            class="form-control mx-auto w-auto" id="wednesday_close" name="wednesday_close" type="time">
+    </div>
+    <div class="mb-3">
+        Thursday
+        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="thursday_open" name="thursday_open"
+            type="time">until<input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="thursday_close"
+            name="thursday_close" type="time">
+    </div>
+    <div class="mb-3">
+        Friday
+        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="friday_open" name="friday_open"
+            type="time">until<input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="friday_close"
+            name="friday_close" type="time">
+    </div>
+    <div class="mb-3">
+        Saturday
+        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="saturday_open" name="saturday_open"
+            type="time">until<input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="saturday_close"
+            name="saturday_close" type="time">
+    </div>
+    <div class="mb-3">
+        Sunday
+        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="sunday_open" name="sunday_open"
+            type="time">until<input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="sunday_close"
+            name="sunday_close" type="time">
+    </div>
+    <p></p>
+    <button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit" data-callback="onSubmit"
+        data-action="submit">Submit</button>
+</form>
+
+{% endblock %}

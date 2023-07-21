@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 
-class Machine:
-    """model for machines"""
+# class Machine:
+#     """model for machines"""
 
-    def __init__(self, name: str, supplier: str):
-        self.name = name
-        self.supplier = supplier
+#     def __init__(self, name: str):
+#         self.name = name
 
 
 class User:
@@ -61,7 +60,7 @@ class UserService:
     def delete_friend(user: User, friend: User):
         user.friends.pop(friend)
 
-    def add_usage(user: User, machine: Machine, amount: int):
+    def add_usage(user: User, machine: str, amount: int):
         user.usage[machine] += amount
 
     def add_gym(user: User, gym: Gym):
@@ -74,28 +73,30 @@ class UserService:
 class Gym:
     """model for each gym"""
 
-    def __init__(self, name: str, address: str):
+    def __init__(self, name: str = None, address: str = None, email: str = None):
         self.name = name
         self.address = address
+        self.email = email
         self.opening_times = {
-            "Monday": "",
-            "Tuesday": "",
-            "Wednesday": "",
-            "Thursday": "",
-            "Friday": "",
-            "Saturday": "",
-            "Sunday and Bank Holidays": "",
+            "monday": "",
+            "tuesday": "",
+            "wednesday": "",
+            "thursday": "",
+            "friday": "",
+            "saturday": "",
+            "sunday": "",
         }
+        self.hashed_password = None
         self.machines = {}
-        self.reparing = {}
+        self.repairing = {}
         self.members = []
 
 
 class GymService:
     """methods for each gym"""
 
-    def register_gym(name: str, address: str):
-        new_gym = Gym(name=name, address=address)
+    def register_gym(name: str = None, address: str = None, email: str = None):
+        new_gym = Gym(name=name, address=address, email=email)
         return new_gym
 
     def add_times(
@@ -108,27 +109,32 @@ class GymService:
         saturday: str,
         sunday: str,
     ):
-        gym.opening_times["Monday"] = monday
-        gym.opening_times["Tuesday"] = tuesday
-        gym.opening_times["Wednesday"] = wednesday
-        gym.opening_times["Thursday"] = thursday
-        gym.opening_times["Friday"] = friday
-        gym.opening_times["Saturday"] = saturday
-        gym.opening_times["Sunday and Bank Holidays"] = sunday
+        gym.opening_times["monday"] = monday
+        gym.opening_times["tuesday"] = tuesday
+        gym.opening_times["wednesday"] = wednesday
+        gym.opening_times["thursday"] = thursday
+        gym.opening_times["friday"] = friday
+        gym.opening_times["saturday"] = saturday
+        gym.opening_times["sunday"] = sunday
+
+        return gym
 
     def add_member(gym: Gym, member: User):
         gym.members.append(member)
+        return gym
 
     def remove_member(gym: Gym, member: User):
         gym.members.pop(member)
+        return gym
 
-    def add_machines(gym: Gym, machine: Machine, amount: int):
+    def add_machines(gym: Gym, machine: str, amount: int):
         gym.machines[machine] = amount
+        return gym
 
-    def remove_machines(gym: Gym, machine: Machine, amount: int):
+    def remove_machines(gym: Gym, machine: str, amount: int):
         gym.machines[machine] = gym.machines[machine] - amount
 
-    def add_to_repair(gym: Gym, machine: Machine, amount: int):
+    def add_to_repair(gym: Gym, machine: str, amount: int):
         gym.machines[machine] = gym.machines[machine] - amount
         gym.repairing[machine] = amount
 
@@ -140,9 +146,24 @@ class Sesh:
     """Detials for each session successfully completed"""
 
     def __init__(
-        self, members: list, machines: list, booking_date: str, session_date: str
+        self, participants: list, machines: list, booking_date: str, session_date: str
     ):
-        self.members = members
+        self.participants = participants
         self.machines = machines
         self.booking_date = booking_date
         self.session_date = session_date
+
+
+class SeshService:
+    """methods for creating sessions"""
+
+    def create_session(
+        participants: list, machines: list, booking_date: str, session_date: str
+    ):
+        new_session = Sesh(
+            participants=participants,
+            machines=machines,
+            booking_date=booking_date,
+            session_date=session_date,
+        )
+        return new_session

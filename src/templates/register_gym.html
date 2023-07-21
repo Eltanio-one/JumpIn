@@ -1,0 +1,31 @@
+{% extends "layout_gym.html" %}
+
+{% block title %} Register Your Gym {% endblock %}
+
+{% block main %}
+<h2 class="title_one">Register Your Gym</h2>
+<p></p>
+<form action="/register_gym" method="post">
+    <div class="mb-3">
+        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="gym_name" name="gym_name"
+            placeholder="Gym Name" type="text">
+    </div>
+    <div class="mb-3">
+        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="gym_email" name="gym_email"
+            placeholder="Contact Email" type="text">
+    </div>
+    <div class="mb-3">
+        <input class="form-control mx-auto w-auto" id="password" name="password" placeholder="Password" type="password">
+    </div>
+    <div class="mb-3">
+        <input class="form-control mx-auto w-auto" id="confirmation" name="confirmation" placeholder="Confirm Password"
+            type="password">
+    </div>
+    <div class="mb-3">
+        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="address" name="address"
+            placeholder="Address" type="text">
+    </div>
+    <p></p>
+    <button class="btn btn-primary" type="submit">Register</button>
+</form>
+{% endblock %}

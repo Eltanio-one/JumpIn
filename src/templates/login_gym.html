@@ -12,7 +12,7 @@
         document.getElementById("login_form").submit();
     }
 </script>
-<form id="login_form" action="/login" method="post">
+<form id="login_form" action="/login_gym" method="post">
     <div class="mb-3">
         <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="username" name="username"
             placeholder="Username or Email" type="text">
@@ -25,16 +25,4 @@
         data-action="submit">Log In</button>
 </form>
 
-<p></p>
-<form action="/register" method="get">
-    <button class="btn btn-secondary" type="submit">Register</button>
-</form>
-<p></p>
-<form action="/register_gym" method="get">
-    <button class="btn btn-secondary" type="submit">Are you a gym owner? Sign up here</button>
-</form>
-<p></p>
-<form action="/login_gym" method="get">
-    <button class="btn btn-secondary" type="submit">Are you a gym owner? Log in here</button>
-</form>
 {% endblock %}

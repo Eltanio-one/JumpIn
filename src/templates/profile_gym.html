@@ -1,0 +1,29 @@
+{% extends "layout_gym.html" %}
+
+{% block title %} Profile {% endblock %}
+
+{% block main %}
+
+<h2 class="title_one">Profile</h2>
+<p></p>
+<script async src="https://www.google.com/recaptcha/api.js"></script>
+<script>
+    function onSubmit(token) {
+        document.getElementById("login_form").submit();
+    }
+</script>
+<!-- somewhere here, feed the info on the gym through jinja to be displayed -->
+<p>Settings</p>
+<form action="/gym_times" method="get">
+    <button class="btn btn-secondary" type="submit">Provide your opening times!</button>
+</form>
+<p></p>
+<form action="/machines" method="get">
+    <button class="btn btn-secondary" type="submit">Provide your available machines!</button>
+</form>
+<p></p>
+<form action="/profile_gym_repairing" method="get">
+    <button class="btn btn-secondary" type="submit">Tell us about any machines currently out of action!</button>
+</form>
+
+{% endblock %}
