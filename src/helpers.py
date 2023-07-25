@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import redirect, Flask, session
+from flask import redirect, Flask, session, flash
 from psycopg2 import connect, DatabaseError
 from keys import HOST, USERNAME, PASSWORD, DBNAME, PORT
 
@@ -7,8 +7,20 @@ from keys import HOST, USERNAME, PASSWORD, DBNAME, PORT
 def login_required(f):
     @wraps(f)
     def wrap(*args, **kwargs):
-        if session.get("user_id") is None:
+        if not session.get("user_id"):
             return redirect("/login")
+        return f(*args, **kwargs)
+
+    return wrap
+
+
+# create a helper function to ensure that only gyms can access gym related sites?
+def gym_only(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        if not session.get("username"):
+            flash("Access Denied")
+            return redirect("/")
         return f(*args, **kwargs)
 
     return wrap

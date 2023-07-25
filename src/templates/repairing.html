@@ -1,0 +1,83 @@
+{% extends "layout_gym.html" %}
+
+{% block title %} Profile {% endblock %}
+
+{% block main %}
+
+<h2 class="title_one">Repairs</h2>
+<p></p>
+<script async src="https://www.google.com/recaptcha/api.js"></script>
+<script>
+    function onSubmit(token) {
+        document.getElementById("login_form").submit();
+    }
+</script>
+<p>Let your customers know of any machines currently out of service!</p>
+<form id="login_form" action="/repairing" method="post" enctype="multipart/form-data">
+    <div class="mb-3">
+        <select class="form-control mx-auto w-auto" id="machine" name="machine">
+            <option disabled>Machines</option>
+            <option value="chest press">Chest Press</option>
+            <option value="pectoral fly">Pectoral Fly</option>
+            <option value="adjustable bench">Adjustable Bench</option>
+            <option value="incline bench">Incline Bench</option>
+            <option value="decline bench">Decline Bench</option>
+            <option value="olympic weight bench">Olympic Weight Bench</option>
+            <option value="preacher curl bench">Preacher Curl Bench</option>
+            <option value="arm curl bench">Arm Curl Bench</option>
+            <option value="arm extension machine">Arm Extension Machine</option>
+            <option value="seated dip machine">Seated Dip Machine</option>
+            <option value="tricep press machine">Tricep Press Machine</option>
+            <option value="tricep extension machine">Tricep Extension Machine</option>
+            <option value="shoulder press machine">Shoulder Press Machine</option>
+            <option value="overhead press machine">Overhead Press Machine</option>
+            <option value="lateral raises machine">Lateral Raises Machine</option>
+            <option value="back extension machine">Back Extension Machine</option>
+            <option value="cable row machine">Cable Row Machine</option>
+            <option value="lat pull down machine">Lat Pull Down Machine</option>
+            <option value="glute ham developer">Glute Ham Developer</option>
+            <option value="front pull down machine">Front Pull Down Machine</option>
+            <option value="abdominal bench">Abdominal Bench</option>
+            <option value="ab crunch machine">Ab Crunch Machine</option>
+            <option value="leg raise / dip tower">Leg Raise / Dip Tower</option>
+            <option value="ab roller">Ab Roller</option>
+            <option value="rotary torso machine">Rotary Torso Machine</option>
+            <option value="leg press machine">Leg Press Machine</option>
+            <option value="leg extension machine">Leg Extension Machine</option>
+            <option value="leg curl machine">Leg Curl Machine</option>
+            <option value="leg abduction machine">Leg Abduction Machine</option>
+            <option value="leg adduction machine">Leg Adduction Machine</option>
+            <option value="seated calf machine">Seated Calf Machine</option>
+            <option value="standing calf machine">Standing Calf Machine</option>
+            <option value="calf press machine">Calf Press Machine</option>
+            <option value="donkey kick machine">Donkey Kick Machine</option>
+            <option value="hack squat machine">Hack Squat Machine</option>
+            <option value="reverse hyper machine">Reverse Hyper Machine</option>
+            <option value="smith machine">Smith Machine</option>
+            <option value="rowing machine">Rowing Machine</option>
+            <option value="cable crossover machine">Cable Crossover Machine</option>
+            <option value="functional trainer">Functional Trainer/option>
+            <option value="assisted pull up machine">Assisted Pull Up Machine</option>
+        </select>
+        <p></p>
+        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="amount" name="amount"
+            placeholder="Number of selected" type="text" display:inline-block>
+    </div>
+    <p></p>
+    <button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit" data-callback="onSubmit"
+        data-action="submit">Submit</button>
+</form>
+<p></p>
+<div></div>
+<h3>Your Gym's Repairs</h3>
+<table class="table table-borderless" style="text-align: center; margin-left: auto; margin-right: auto; width: 500px;">
+    <tbody>
+        {% for row in rows %}
+        <tr class="table_one">
+            <td>{{ row.Machine }}</td>
+            <td>{{ row.Amount }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -73,6 +73,8 @@ def create_tables():
             id SERIAL PRIMARY KEY,
             gym_id INT,
             machine_id INT,
+            machine_name VARCAHR(255),
+            amount INT,
             FOREIGN KEY (gym_id) REFERENCES gym (gym_id) ON UPDATE CASCADE ON DELETE CASCADE,
             FOREIGN KEY (machine_id) REFERENCES machine (machine_id) ON UPDATE CASCADE ON DELETE CASCADE
         )
@@ -109,6 +111,16 @@ def create_tables():
             session_date VARCHAR(255),
             FOREIGN KEY (participants) REFERENCES users (user_id) ON UPDATE CASCADE ON DELETE CASCADE,
             FOREIGN KEY (machines) REFERENCES machine (machine_id) ON UPDATE CASCADE ON DELETE CASCADE
+        )
+        """,
+        """
+        CREATE TABLE user_session (
+            id SERIAL PRIMARY KEY,
+            user_id INT,
+            request_time TIMESTAMP,
+            machine_list VARCHAR[],
+            compared_users INT[],
+            FOREIGN KEY (user_id) REFERENCES users (user_id) ON UPDATE CASCADE ON DELETE CASCADE
         )
         """)
     
