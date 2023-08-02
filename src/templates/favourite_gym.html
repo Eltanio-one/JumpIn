@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+
+{% block title %} Profile {% endblock %}
+
+{% block main %}
+
+<h2 class="title_one">Add a favourite gym you're a member of!</h2>
+<p></p>
+<script async src="https://www.google.com/recaptcha/api.js"></script>
+<script>
+    function onSubmit(token) {
+        document.getElementById("login_form").submit();
+    }
+</script>
+<!-- somewhere here, feed the info on the gym through jinja to be displayed -->
+<form action="/favourite_gym" method="post">
+    {% for gym in gyms %}
+    <select>
+        <option value="{{ gym }}">{{ gym }}</option>
+    </select>
+    {% endfor %}
+    <button class="btn btn-secondary" type="submit">Add your favourite gym!</button>
+</form>
+<p></p>
+<div class="bottompage">
+    <h3>Your top 5 machines!</h3>
+    {% for row in rows %}
+    <tr class="table_one">
+        <td>{{ row }}</td>
+    </tr>
+    {% endfor %}
+</div>
+<p></p>
+
+
+<!-- add ability to change account details -->
+<!-- add ability to delete account -->
+
+{% endblock %}

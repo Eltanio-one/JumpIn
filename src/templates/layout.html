@@ -36,22 +36,16 @@
     {% if session["user_id"] %}
     <ul class="nav justify-content-center" id="navbar">
         <li class="nav-item">
-            <a class="nav-link" href="/">Home</a>
+            <a class="nav-link" href="/index">Home</a>
         </li>
         <li class="nav-item">
             <a class="nav-link" href="/session_plan">Plan a session</a>
         </li>
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" data-toggle="dropdown" type="button"
-                role="button" aria-haspopup="true" aria-expanded="false">Workspaces</a>
-            <div class="dropdown-menu">
-                <a class="dropdown-item" href="/projects">Projects</a>
-                <a class="dropdown-item" href="/work">Work</a>
-                <a class="dropdown-item" href="/personal">Personal</a>
-            </div>
+        <li class="nav-item">
+            <a class="nav-link" href="/user_profile">Profile</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="/about">About & Contact</a>
+            <a class="nav-link" href="/contact">Contact</a>
         </li>
         <li class="nav-item">
             <a class="nav-link" href="/logout">Logout</a>

@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block title %} Profile {% endblock %}
+
+{% block main %}
+
+<h2 class="title_one">Delete your account</h2>
+<p></p>
+<script async src="https://www.google.com/recaptcha/api.js"></script>
+<script>
+    function onSubmit(token) {
+        document.getElementById("login_form").submit();
+    }
+</script>
+<div>
+    <p>Enter your password to delete your account</p>
+    <form action="/delete_user" method="post">
+        <input id="password_delete" placeholder="Password" name="password_delete" class="form-control mx-auto w-auto">
+        <button class="btn btn-secondary" type="submit">Submit</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,14 +1,26 @@
-from classes import User, Gym, Sesh, UserService, GymService
-from flask import Flask, Response, render_template, session, request, redirect, flash
+from classes import UserService, GymService
+from flask import Flask, render_template, session, request, redirect, flash
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
-from helpers import login_required, gym_only, fetch_row, fetch_rows, modify_rows
-from psycopg2 import connect, DatabaseError
-import numpy as np
-from re import fullmatch
-from keys import HOST, USERNAME, PASSWORD, DBNAME, PORT
 from datetime import datetime
+from helpers import (
+    login_required,
+    gym_only,
+    fetch_row,
+    fetch_rows,
+    modify_rows,
+    verify_password,
+    verify_email,
+    matching_algorithm,
+    machine_matches,
+    get_time,
+    check_hour,
+)
+import sys
+import os
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 app = Flask(__name__)
 
@@ -31,43 +43,19 @@ def after_request(response):
 @app.route("/index")
 @login_required
 def index():
-    username = "".join(
-        fetch_row(
-            """SELECT username FROM users WHERE user_id = %s""", (session["user_id"],)
-        )
+    time_response = check_hour()
+    return render_template(
+        "index.html", username=session["user"].username, time_response=time_response
     )
-    now = datetime.now()
-    current_time = now.strftime("%H")
-    current_time = int(current_time)
-    if current_time < 12 and current_time > 5:
-        time_response = "Good Morning,"
-    elif current_time >= 12 and current_time < 17:
-        time_response = "Good Afternoon,"
-    else:
-        time_response = "Good Evening,"
-    return render_template("index.html", username=username, time_response=time_response)
 
 
 @app.route("/index_gym")
 @login_required
 @gym_only
 def index_gym():
-    username = "".join(
-        fetch_row(
-            """SELECT gym_name FROM gym WHERE gym_id = %s""", (session["user_id"],)
-        )
-    )
-    now = datetime.now()
-    current_time = now.strftime("%H")
-    current_time = int(current_time)
-    if current_time < 12 and current_time > 5:
-        time_response = "Good Morning,"
-    elif current_time >= 12 and current_time < 17:
-        time_response = "Good Afternoon,"
-    else:
-        time_response = "Good Evening,"
+    time_response = check_hour()
     return render_template(
-        "index_gym.html", username=username, time_response=time_response
+        "index_gym.html", username=session["user"].username, time_response=time_response
     )
 
 
@@ -75,23 +63,17 @@ def index_gym():
 def login():
     if request.method == "GET":
         return render_template("login.html")
-    # maybe allow email address to be used to login too?
     elif request.method == "POST":
         session.clear()
         usermail, password = request.form.get("username"), request.form.get("password")
         if not usermail:
             flash("Please insert a username or email")
-            return render_template("login.html")
+            return redirect("/login")
         if not password:
             flash("Please insert a password")
-            return render_template("login.html")
+            return redirect("/login")
 
-        if not (
-            _ := fullmatch(
-                r"^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
-                usermail,
-            )
-        ):
+        if not verify_email(usermail):
             row = fetch_row(
                 """SELECT * FROM users WHERE username = (%s)""", (usermail,)
             )
@@ -108,13 +90,24 @@ def login():
 
         if not row:
             flash("No account found")
-            return render_template("login.html")
+            return redirect("/login")
 
-        if len(row) != 7 or not check_password_hash(row[6], password):
+        if len(row) != 8 or not check_password_hash(row[6], password):
             flash("Invalid username/email and/or password")
             # return render_template("login.html", site_key=SITE_KEY)
-            return render_template("login.html")
+            return redirect("/login")
 
+        user_service = UserService
+        new_user = user_service.register_user(
+            username=row[1],
+            email=row[2],
+            name=row[3],
+            date_of_birth=row[4],
+            account_creation=row[5],
+            hashed_password=row[6],
+        )
+
+        session["user"] = new_user
         session["user_id"] = row[0]
 
         return redirect("/index")
@@ -124,23 +117,17 @@ def login():
 def login_gym():
     if request.method == "GET":
         return render_template("login_gym.html")
-    # maybe allow email address to be used to login too?
     elif request.method == "POST":
         session.clear()
         usermail, password = request.form.get("username"), request.form.get("password")
         if not usermail:
             flash("Please insert a username or email")
-            return render_template("login.html")
+            return redirect("/login")
         if not password:
             flash("Please insert a password")
-            return render_template("login.html")
+            return redirect("/login")
 
-        if not (
-            _ := fullmatch(
-                r"^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
-                usermail,
-            )
-        ):
+        if not verify_email(usermail):
             row = fetch_row(
                 """SELECT * FROM gym WHERE contact_email = (%s)""", (usermail,)
             )
@@ -157,15 +144,25 @@ def login_gym():
 
         if not row:
             flash("No account found")
-            return render_template("login_gym.html")
+            return redirect("/login")
 
         if len(row) != 6 or not check_password_hash(row[5], password):
             flash("Invalid username/email and/or password")
             # return render_template("login.html", site_key=SITE_KEY)
-            return render_template("login.html")
+            return redirect("/login")
+
+        gym_service = GymService
+        new_gym = gym_service.register_gym(
+            username=row[1],
+            email=row[2],
+            address=row[3],
+            account_creation=row[4],
+            hashed_password=row[5],
+        )
 
         session["user_id"] = row[0]
-        session["username"] = row[1]
+        session["username"] = new_gym.username
+        session["user"] = new_gym
 
         return redirect("/index_gym")
 
@@ -191,36 +188,40 @@ def register():
         )
 
         if duplicate_check:
-            # if duplicate_check[0] == new_user.username:
             flash("Please choose a unique username")
-            return render_template("register.html")
+            return redirect("/register")
 
         for key, val in vars(new_user).items():
             if not val:
                 if key == "date_of_birth":
                     flash(f'Please enter a {key.replace("_", " ")}')
-                    return render_template("register.html")
+                    return redirect("/register")
                 if key in ["friends", "usage", "hashed_password", "gym"]:
                     continue
                 flash(f"Please enter a {key}")
-                return render_template("register.html")
+                return redirect("/register")
+
+        if not verify_email(new_user.email):
+            flash("Please enter a valid email address")
+            return redirect("/register")
+
+        if not verify_password(new_user.password):
+            flash("Please enter a password that meets the password requirements")
+            return redirect("/register")
 
         confirmation = request.form.get("confirmation")
 
         if not confirmation:
             flash("Please confirm your password")
-            return render_template("register.html")
+            return redirect("/register")
 
         if new_user.password != confirmation:
             flash("Please ensure passwords match")
-            return render_template("register.html")
+            return redirect("/register")
 
         new_user.hashed_password = generate_password_hash(
             new_user.password, method="pbkdf2:sha256", salt_length=8
         )
-
-        now = datetime.now()
-        current_time = now.strftime("%d/%m/%Y")
 
         modify_rows(
             """INSERT INTO users (username, email, name, date_of_birth, account_creation, hashed_password) VALUES (%s, %s, %s, %s, %s, %s)""",
@@ -229,7 +230,7 @@ def register():
                 new_user.email,
                 new_user.name,
                 new_user.date_of_birth,
-                current_time,
+                get_time(),
                 new_user.hashed_password,
             ),
         )
@@ -237,20 +238,61 @@ def register():
         for language in new_user.languages:
             modify_rows(
                 """INSERT INTO languages (user_id, language) VALUES (%s, %s)""",
-                (language,),
+                (session["user_id"], language),
             )
 
         del new_user
 
-        return redirect("/")
+        return redirect("/login")
 
 
+# need to make it specific to gym at some stage
 @app.route("/session_plan", methods=["GET", "POST"])
 @login_required
 def session_plan():
     if request.method == "GET":
-        return render_template("session_plan.html")
+        # get machines from users gym
+
+        if not (
+            gym_id := fetch_row(
+                """SELECT gym_id FROM users WHERE user_id = %s""", (session["user_id"],)
+            )
+        ):
+            flash(
+                "Please register for a gym on your profile page before creating a session"
+            )
+            rows, available_machines, user_matches = {"": ""}, [""], {"": ""}
+
+            return render_template(
+                "session_plan.html",
+                rows=rows,
+                available_machines=available_machines,
+                user_matches=user_matches,
+            )
+
+        available_machines = fetch_rows(
+            """SELECT machine_name FROM gym_machines WHERE gym_id = %s""",
+            (gym_id,),
+        )
+        rows, user_matches = {"": ""}, {"": ""}
+        return render_template(
+            "session_plan.html",
+            rows=rows,
+            available_machines=available_machines,
+            user_matches=user_matches,
+        )
     elif request.method == "POST":
+        if not (
+            gym_id := fetch_row(
+                """SELECT gym_id FROM users WHERE user_id = %s""", (session["user_id"],)
+            )
+        ):
+            flash(
+                "Please register for a gym on your profile page before creating a session"
+            )
+            rows, available_machines = {"": ""}, [""]
+
+            return render_template("session_plan.html", rows=rows)
         machine_list = [
             request.form.get("machine1"),
             request.form.get("machine2"),
@@ -259,29 +301,28 @@ def session_plan():
             request.form.get("machine5"),
         ]
 
-        # later on, ensure that one person can't flood the lobby
-        # prev_session = fetch_row(
-        #     """SELECT * FROM user_session WHERE user_id = %s""",
-        #     (session["user_id"],),
-        # )
+        prev_session = fetch_row(
+            """SELECT * FROM user_session WHERE user_id = %s""",
+            (session["user_id"],),
+        )
         # if prev_session:
         #     flash(
         #         "Please cancel your previous session request before submitting another!"
         #     )
-        #     return render_template("session_plan.html")
+        #     return redirect("/session_plan")
 
-        username = fetch_row(
-            """SELECT username FROM users WHERE user_id = %s""", (session["user_id"],)
+        modify_rows(
+            """INSERT INTO user_session (user_id, user_name, request_time, machine_list) VALUES (%s, %s, %s, %s)""",
+            (
+                session["user_id"],
+                session["user"].username,
+                datetime.now(),
+                machine_list,
+            ),
         )
-
-        # modify_rows(
-        #     """INSERT INTO user_session (user_id, user_name, request_time, machine_list) VALUES (%s, %s, %s, %s)""",
-        #     (session["user_id"], username[0], datetime.now(), machine_list),
-        # )
         rows = fetch_rows(
             """SELECT user_id, machine_list, user_name FROM user_session ORDER BY request_time LIMIT 5"""
         )
-
         rows = [
             (
                 1,
@@ -339,44 +380,205 @@ def session_plan():
                 "sugma",
             ),
         ]
-
         if len(rows) < 2:
             flash(
                 "Please wait whilst we fill the lobby and attempt to find you a match, or cancel your request below!"
             )
-            return render_template("session_plan.html")
+            return redirect("/session_plan")
         else:
             """Algorithm to link lobby members to their closest matched routine member"""
-            matches = np.zeros((len(rows), len(rows[0][1])))
-            for i, _ in enumerate(rows):
-                for j, _ in enumerate(rows):
-                    if i == j:
-                        continue
-                    matches[i][j] = len(list(np.intersect1d(rows[i][1], rows[j][1])))
-            matches_output = {}
-            for i, _ in enumerate(matches):
-                max_for_row = max(matches[i])
-                if max_for_row == 0:
-                    continue
-                matches_output[rows[i][2]] = list()
-                for j, _ in enumerate(matches[i]):
-                    if matches[i][j] == max_for_row:
-                        matches_output[rows[i][2]].append(rows[j][2])
-            for i, _ in enumerate(rows):
-                if not matches_output.get(rows[i][2]):
-                    matches_output[rows[i][2]] = ["no matches"]
+            matches_output = matching_algorithm(rows)
+            user_matches = machine_matches(session["user_id"], rows)
 
-            """create an algorithm to pass the machines that match between matched members"""
+            """need to figure out how to enable users to accept a session proposal"""
 
-        return render_template("session_plan.html", rows=matches_output)
+            """Add the machines that are provided to each users usage db"""
+            for machine in machine_list:
+                machine_id = fetch_row(
+                    """SELECT machine_id FROM machine WHERE name = %s""", (machine,)
+                )
+                check = fetch_row(
+                    """SELECT uses FROM usage WHERE user_id = %s AND machine_id = %s""",
+                    (session["user_id"], machine_id),
+                )
+                if not check:
+                    modify_rows(
+                        """INSERT INTO usage (user_id, machine_id, machine_name, uses) VALUES (%s, %s, %s, %s)""",
+                        (session["user_id"], machine_id, machine, 1),
+                    )
+                else:
+                    modify_rows(
+                        """UPDATE usage SET uses = uses + 1 WHERE user_id = %s AND machine_id = %s""",
+                        (session["user_id"], machine_id),
+                    )
+                available_machines = fetch_rows(
+                    """SELECT machine_name FROM gym_machines WHERE gym_id = %s""",
+                    (gym_id,),
+                )
+            return render_template(
+                "session_plan.html",
+                rows=matches_output,
+                available_machines=available_machines,
+                user_matches=user_matches,
+            )
 
 
-@app.route("/user_profile", methods=["GET"])
-# create a function to ensure that gym or user is logged in?
+@app.route("/favourite_gym", methods=["POST"])
+@login_required
+def favourite_gym():
+    if request.method == "POST":
+        favourite_gym = request.form.get("favourite_gyms")
+
+        gym_id = fetch_row(
+            """SELECT gym_id FROM gym WHERE gym_name = %s""", (favourite_gym,)
+        )
+
+        session["user"].gym_id = gym_id
+
+        reg_check = fetch_row(
+            """SELECT * FROM members WHERE user_id = %s""", (session["user_id"],)
+        )
+
+        if reg_check:
+            modify_rows(
+                """UPDATE members SET gym_id = %s WHERE user_id = %s""",
+                (
+                    gym_id,
+                    session["user_id"],
+                ),
+            )
+        else:
+            modify_rows(
+                """INSERT INTO members (gym_id, user_id) VALUES (%s, %s)""",
+                (gym_id, session["user_id"]),
+            )
+
+        modify_rows(
+            """UPDATE users SET gym_id = %s WHERE user_id = %s""",
+            (
+                gym_id,
+                session["user_id"],
+            ),
+        )
+
+        return redirect("/user_profile")
+
+
+@app.route("/delete_user", methods=["GET", "POST"])
+@login_required
+def delete_user():
+    if request.method == "GET":
+        return render_template("delete_user.html")
+    elif request.method == "POST":
+        password = request.form.get("password_delete")
+        if not check_password_hash(session["user"].hashed_password, password):
+            flash("Incorrect password provided")
+            return redirect("/delete_user")
+
+        modify_rows("""DELETE FROM users WHERE user_id = %s""", (session["user_id"],))
+
+        session["user"] = None
+
+    return redirect("/logout")
+
+
+@app.route("/change_password", methods=["GET", "POST"])
+@login_required
+def change_password():
+    if request.method == "GET":
+        return render_template("change_password.html")
+    elif request.method == "POST":
+        old_password, new_password, confirmation = (
+            request.form.get("password_old"),
+            request.form.get("password_new"),
+            request.form.get("confirmation"),
+        )
+        if not old_password:
+            flash("Please enter your old password")
+            return redirect("/change_password")
+        if not new_password:
+            flash("Please enter your new password")
+            return redirect("/change_password")
+        if not confirmation:
+            flash("Please confirm your password")
+            return redirect("/change_password")
+
+        if not check_password_hash(session["user"].hashed_password, old_password):
+            flash("Incorrect password provided")
+            return redirect("/change_password")
+
+        if not verify_password(new_password):
+            flash("Please enter a password that meets the password requirements")
+            return redirect("/change_password")
+
+        if new_password != old_password:
+            flash("Please choose a new password")
+            return redirect("/change_password")
+
+        if new_password != confirmation:
+            flash("Confirmation should match new password")
+            return redirect("/change_password")
+
+        hashed_password = generate_password_hash(
+            new_password, method="pbkdf2:sha256", salt_length=8
+        )
+
+        session["user"].hashed_password = hashed_password
+
+        modify_rows(
+            """UPDATE users SET hashed_password = %s WHERE user_id = %s""",
+            (hashed_password, session["user_id"]),
+        )
+    flash("Please log in again using your new password")
+    return redirect("/logout")
+
+
+@app.route("/user_profile")
 @login_required
 def user_profile():
-    if request.method == "GET":
-        return render_template("user_profile.html")
+    top_machines = fetch_rows(
+        """SELECT machine_name FROM usage WHERE user_id = %s LIMIT 5""",
+        (session["user_id"],),
+    )
+
+    gyms = fetch_rows("""SELECT gym_name FROM gym ORDER BY gym_id ASC""")
+
+    available_machines = fetch_rows(
+        """SELECT machine_name FROM gym_machines WHERE gym_id = %s""",
+        (session["user"].gym_id,),
+    )
+
+    account_info = fetch_row(
+        """SELECT username, email, name, account_creation FROM users WHERE user_id = %s""",
+        (session["user_id"],),
+    )
+
+    gym_name = fetch_row(
+        """SELECT gym_name FROM gym WHERE gym_id = %s""", (session["user"].gym_id,)
+    )
+
+    dict_labels = ["Username:", "Email:", "Name:", "Member since:"]
+
+    details_dict = dict(zip(dict_labels, account_info))
+
+    if not gym_name:
+        details_dict[
+            "Your current gym:"
+        ] = "Not current registered with a gym, do so above!"
+
+    else:
+        details_dict["Your current gym:"] = gym_name[0]
+
+    if not top_machines:
+        top_machines = [""]
+
+    return render_template(
+        "user_profile.html",
+        rows=top_machines,
+        gyms=gyms,
+        available_machines=available_machines,
+        account_details=details_dict,
+    )
 
 
 @app.route("/register_gym", methods=["GET", "POST"])
@@ -392,11 +594,10 @@ def register_gym():
         )
 
         duplicate_check = fetch_row(
-            """SELECT username FROM users WHERE username = %s""", (new_gym.name,)
+            """SELECT username FROM users WHERE username = %s""", (new_gym.username,)
         )
 
         if duplicate_check:
-            # if duplicate_check[0] == new_user.username:
             flash(
                 "An account already exists with this name, please ensure you are not already signed up"
             )
@@ -407,6 +608,14 @@ def register_gym():
                 if key not in ["hashed_password", "machines", "members", "repairing"]:
                     flash(f"Please enter a {key}")
                     return render_template("register.html")
+
+        if not verify_email(new_gym.email):
+            flash("Please enter a valid email address")
+            return redirect("/register_gym")
+
+        if not verify_password(new_gym.password):
+            flash("Please enter a password that meets the password requirements")
+            return redirect("/register")
 
         password = request.form.get("password")
         confirmation = request.form.get("confirmation")
@@ -423,21 +632,16 @@ def register_gym():
             password, method="pbkdf2:sha256", salt_length=8
         )
 
-        now = datetime.now()
-        current_time = now.strftime("%d/%m/%Y")
-
         modify_rows(
             """INSERT INTO gym (gym_name, contact_email, address, account_creation, hashed_password) VALUES (%s, %s, %s, %s, %s)""",
             (
-                new_gym.name,
+                new_gym.username,
                 new_gym.email,
                 new_gym.address,
-                current_time,
+                get_time(),
                 new_gym.hashed_password,
             ),
         )
-
-        del new_gym
 
         return redirect("/login")
 
@@ -457,38 +661,23 @@ def gym_times():
     if request.method == "GET":
         return render_template("gym_times.html")
     if request.method == "POST":
-        mon_open = request.form.get("monday_open")
-        mon_close = request.form.get("monday_close")
-        tues_open = request.form.get("tuesday_open")
-        tues_close = request.form.get("tuesday_close")
-        wed_open = request.form.get("wednesday_open")
-        wed_close = request.form.get("wednesday_close")
-        thurs_open = request.form.get("thursday_open")
-        thurs_close = request.form.get("thursday_close")
-        fri_open = request.form.get("friday_open")
-        fri_close = request.form.get("friday_close")
-        sat_open = request.form.get("saturday_open")
-        sat_close = request.form.get("saturday_close")
-        sun_open = request.form.get("sunday_open")
-        sun_close = request.form.get("sunday_close")
-
         gym_service = GymService
-        new_gym = gym_service.register_gym(name=session["user_id"])
+        new_gym = session["user"]
         new_gym = gym_service.add_times(
             gym=new_gym,
-            monday=f"{mon_open} - {mon_close}",
-            tuesday=f"{tues_open} - {tues_close}",
-            wednesday=f"{wed_open} - {wed_close}",
-            thursday=f"{thurs_open} - {thurs_close}",
-            friday=f"{fri_open} - {fri_close}",
-            saturday=f"{sat_open} - {sat_close}",
-            sunday=f"{sun_open} - {sun_close}",
+            monday=f'{request.form.get("monday_open")} - {request.form.get("monday_close")}',
+            tuesday=f'{request.form.get("tuesday_open")} - {request.form.get("tuesday_close")}',
+            wednesday=f'{request.form.get("wednesday_open")} - {request.form.get("wednesday_close")}',
+            thursday=f'{request.form.get("thursday_open")} - {request.form.get("thursday_close")}',
+            friday=f'{request.form.get("friday_open")} - {request.form.get("friday_close")}',
+            saturday=f'{request.form.get("saturday_open")} - {request.form.get("saturday_close")}',
+            sunday=f'{request.form.get("sunday_open")} - {request.form.get("sunday_close")}',
         )
 
         modify_rows(
             """INSERT INTO opening_times (gym_id, monday, tuesday, wednesday, thursday, friday, saturday, sunday) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
             (
-                new_gym.name,
+                new_gym.username,
                 new_gym.opening_times["monday"],
                 new_gym.opening_times["tuesday"],
                 new_gym.opening_times["wednesday"],
@@ -499,7 +688,7 @@ def gym_times():
             ),
         )
 
-        del new_gym
+        session["user"] = new_gym
         return render_template("gym_times.html")
 
 
@@ -508,10 +697,10 @@ def gym_times():
 @gym_only
 def machines():
     if request.method == "GET":
-        return render_template("machines.html")
+        return render_template("machines.html", rows=session["user"].machines)
     if request.method == "POST":
         gym_service = GymService
-        new_gym = gym_service.register_gym(name=session["user_id"])
+        new_gym = session["user"]
         try:
             machine, amount = request.form.get("machine"), int(
                 request.form.get("amount")
@@ -531,7 +720,7 @@ def machines():
 
         dup_check = fetch_row(
             """SELECT amount FROM gym_machines WHERE gym_id = %s AND machine_id = %s""",
-            (new_gym.name, machine_id),
+            (session["user_id"], machine_id),
         )
 
         if dup_check:
@@ -539,33 +728,23 @@ def machines():
             new_amount = old_amount + amount
             modify_rows(
                 """UPDATE gym_machines SET amount = %s WHERE gym_id = %s AND machine_id = %s""",
-                (new_amount, new_gym.name, machine_id),
+                (new_amount, session["user_id"], machine_id),
             )
 
         else:
             modify_rows(
                 """INSERT INTO gym_machines (gym_id, machine_id, machine_name, amount) VALUES (%s, %s, %s, %s)""",
                 (
-                    new_gym.name,
+                    session["user_id"],
                     machine_id,
                     machine,
                     new_gym.machines[machine],
                 ),
             )
 
-        current_machines = fetch_rows(
-            """SELECT machine_name, amount FROM gym_machines WHERE gym_id = %s""",
-            (new_gym.name,),
-        )
+        session["user"] = new_gym
 
-        current_machines_rows = []
-
-        for tup in current_machines:
-            current_machines_rows.append({"Machine": tup[0].title(), "Amount": tup[1]})
-
-        del new_gym
-
-        return render_template("machines.html", rows=current_machines_rows)
+        return render_template("machines.html", rows=session["user"].machines)
 
 
 @app.route("/repairing", methods=["GET", "POST"])
@@ -573,17 +752,17 @@ def machines():
 @gym_only
 def repairing():
     if request.method == "GET":
-        return render_template("repairing.html")
+        return render_template("repairing.html", rows=session["user"].repairing)
     elif request.method == "POST":
         gym_service = GymService
-        new_gym = gym_service.register_gym(name=session["user_id"])
+        gym = session["user"]
         try:
             machine, amount = request.form.get("machine"), int(
                 request.form.get("amount")
             )
         except ValueError:
             flash("Please enter an integer")
-            return render_template("machines.html")
+            return redirect("/repairing")
 
         machine_id = fetch_row(
             """SELECT machine_id FROM machine WHERE name = %s""", (machine,)
@@ -591,42 +770,48 @@ def repairing():
 
         dup_check = fetch_row(
             """SELECT amount FROM gym_machines WHERE gym_id = %s AND machine_id = %s""",
-            (new_gym.name, machine_id),
+            (session["user_id"], machine_id),
         )
 
         if not dup_check:
             flash("You do not currently own any of this machine")
-            return render_template("repairing.html")
+            return redirect("/repairing")
 
         old_amount = dup_check[0]
         if amount > old_amount:
             flash(
                 f"Please enter an amount less than or equal to your current holdings for this machine: {old_amount}"
             )
-            return render_template("repairing.html")
+            return redirect("/repairing")
 
         new_amount = old_amount - amount
         modify_rows(
             """UPDATE gym_machines SET amount = %s WHERE gym_id = %s AND machine_id = %s""",
-            (new_amount, new_gym.name, machine_id),
+            (new_amount, session["user_id"], machine_id),
         )
 
-        modify_rows(
-            """INSERT INTO repairing (gym_id, machine_id, machine_name, amount) VALUES (%s, %s, %s, %s)""",
-            (new_gym.name, machine_id, machine, amount),
+        dup_check = fetch_row(
+            """SELECT amount FROM repairing WHERE gym_id = %s AND machine_id = %s""",
+            (session["user_id"], machine_id),
         )
 
-        current_repairs = fetch_rows(
-            """SELECT machine_name, amount FROM repairing WHERE gym_id = %s""",
-            (new_gym.name,),
-        )
+        if not dup_check:
+            modify_rows(
+                """INSERT INTO repairing (gym_id, machine_id, machine_name, amount) VALUES (%s, %s, %s, %s)""",
+                (session["user_id"], machine_id, machine, amount),
+            )
+        else:
+            old_amount = dup_check[0]
+            new_amount = old_amount + amount
+            modify_rows(
+                """UPDATE repairing SET amount = %s WHERE gym_id = %s AND machine_id = %s""",
+                (new_amount, session["user_id"], machine_id),
+            )
 
-        current_repairs_rows = []
-
-        for tup in current_repairs:
-            current_repairs_rows.append({"Machine": tup[0].title(), "Amount": tup[1]})
-
-        return render_template("repairing.html", rows=current_repairs_rows)
+        # add object code
+        gym = gym_service.remove_machines(gym=gym, machine=machine, amount=amount)
+        gym = gym_service.add_to_repair(gym=gym, machine=machine, amount=amount)
+        return redirect("/repairing")
 
 
 @app.route("/logout")
@@ -636,7 +821,9 @@ def logout():
     try:
         if session["username"]:
             session["username"] = None
-            return render_template("login.html")
+        if session["user"]:
+            session["user"] = None
+        return render_template("login.html")
     except KeyError:
         return render_template("login.html")
 

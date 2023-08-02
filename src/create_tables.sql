@@ -13,7 +13,8 @@ def create_tables():
             name VARCHAR(255),
             date_of_birth VARCHAR(255),
             account_creation VARCHAR(255),
-            hashed_password VARCHAR(255)
+            hashed_password VARCHAR(255),
+            gym_id VARCHAR(255)
         )
         """,
         """
@@ -53,6 +54,8 @@ def create_tables():
             id SERIAL PRIMARY KEY,
             user_id INT,
             machine_id INT,
+            machine_name VARCHAR(255),
+            uses INT,
             FOREIGN KEY (user_id) REFERENCES users (user_id) ON UPDATE CASCADE ON DELETE CASCADE,
             FOREIGN KEY (machine_id) REFERENCES machine (machine_id) ON UPDATE CASCADE ON DELETE CASCADE
         )

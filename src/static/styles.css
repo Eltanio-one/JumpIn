@@ -111,3 +111,11 @@ input[type="date"] {
     color: chartreuse;
     transition: 0.2s;
 }
+
+.rightpage {
+    margin-right: 1200px;
+}
+
+.leftpage {
+    margin-left: 750px;
+}

@@ -72,10 +72,10 @@
 <h3>Your Gym's Machines</h3>
 <table class="table table-borderless" style="text-align: center; margin-left: auto; margin-right: auto; width: 500px;">
     <tbody>
-        {% for row in rows %}
+        {% for machine, amount in rows.items() %}
         <tr class="table_one">
-            <td>{{ row.Machine }}</td>
-            <td>{{ row.Amount }}</td>
+            <td>{{ machine }}</td>
+            <td>{{ amount }}</td>
         </tr>
         {% endfor %}
     </tbody>

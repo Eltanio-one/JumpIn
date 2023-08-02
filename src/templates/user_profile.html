@@ -1,0 +1,74 @@
+{% extends "layout.html" %}
+
+{% block title %} Profile {% endblock %}
+
+{% block main %}
+
+<h2 class="title_one">Profile</h2>
+<p></p>
+<script async src="https://www.google.com/recaptcha/api.js"></script>
+<script>
+    function onSubmit(token) {
+        document.getElementById("login_form").submit();
+    }
+</script>
+<h2>About</h2>
+<div>
+    <table class="title_one">
+        {% for key, value in account_details.items() %}
+        <tr class="table_one">
+            <td>{{ key }}</td>
+            <td>{{ value }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+<div>
+    <form action="/delete_user" method="get">
+        <button class="btn btn-secondary" type="submit">Delete Account</button>
+    </form>
+</div>
+<div>
+    <form action="/change_password" method="get">
+        <button class="btn btn-secondary" type="submit">Change your password</button>
+    </form>
+</div>
+<!-- somewhere here, feed the info on the gym through jinja to be displayed -->
+<h2>Settings</h3>
+    <h3>Select or change the gym you're registered with!</h3>
+    <form action="/favourite_gym" method="post">
+        <select id="favourite_gyms" name="favourite_gyms" class="form-control mx-auto w-auto">
+            {% for gym in gyms %}
+            <option value="{{ gym[0] }}">{{ gym[0] }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-secondary" type="submit">Submit</button>
+    </form>
+    <p></p>
+    <div class="leftpage">
+        <h3>Your top 5 machines!</h3>
+        {% for row in rows %}
+        <tr class="table_one">
+            <td>{{ row }}</td>
+        </tr>
+        {% endfor %}
+    </div>
+    <div class="rightpage">
+        <h3>Your gyms available machines!</h3>
+        <table>
+            {% for row in available_machines %}
+            {% for machine in row %}
+            <tr class="table_one">
+                <td>{{ machine }}</td>
+            </tr>
+            {% endfor %}
+            {% endfor %}
+        </table>
+    </div>
+    <p></p>
+
+
+    <!-- add ability to change account details -->
+    <!-- add ability to delete account -->
+
+    {% endblock %}
