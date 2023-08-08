@@ -1,0 +1,94 @@
+{% extends "layout.html" %}
+
+{% block title %} Your Session Requests {% endblock %}
+
+{% block main %}
+
+<h2 class="title_one">Your Sent Requests</h2>
+<p></p>
+<script async src="https://www.google.com/recaptcha/api.js"></script>
+<script>
+    function onSubmit(token) {
+        document.getElementById("login_form").submit();
+    }
+</script>
+<h2>Your requested sessions</h2>
+<table class="table table-borderless" style="text-align: center; margin-left: auto; margin-right: auto; width: 500px;">
+    <tbody>
+        <tr>
+            <td>Lobby member</td>
+            <td>Lobby member/s with closest matching routine</td>
+        </tr>
+        {% for name, machines in your_requests.items() %}
+        <tr>
+            <form id="cancel_request" action="/cancel_request" method="post">
+                <td>{{ name }}
+                    <input type="hidden" id="username" name="username" value="{{ name }}" />
+                </td>
+                <td>{{ " | ".join(machines).title() }}</td>
+                <td><button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit"
+                        data-callback="onSubmit" data-action="submit">Cancel</button></td>
+            </form>
+            {% endfor %}
+        </tr>
+    </tbody>
+</table>
+<h2>Your session invites</h2>
+<table class="table table-borderless" style="text-align: center; margin-left: auto; margin-right: auto; width: 500px;">
+    <tbody>
+        <tr>
+            <td>Lobby member</td>
+            <td>Lobby member/s with closest matching routine</td>
+        </tr>
+        {% for name, machines in others_requests.items() %}
+        <tr>
+            <td>{{ name }}</td>
+            <td>{{ " | ".join(machines).title() }}</td>
+            <form id="accept_request" action="/accept_request" method="post">
+                <td>
+                    <input type="hidden" id="username" name="username" value="{{ name }}" />
+                </td>
+                <td><button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit"
+                        data-callback="onSubmit" data-action="submit">Accept</button></td>
+            </form>
+            <form id="decline_request" action="/decline_request" method="post">
+                <td>
+                    <input type="hidden" id="username" name="username" value="{{ name }}" />
+                </td>
+                <td><button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit"
+                        data-callback="onSubmit" data-action="submit">Decline</button></td>
+            </form>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<h2>Your Notifications</h2>
+<table class="table table-borderless" style="text-align: center; margin-left: auto; margin-right: auto; width: 500px;">
+    <tbody>
+        {% for name, decision in notifications.items() %}
+        <tr>
+            <td>{{ name }} has {{ decision }} your request! Head to the gym to JumpIn!</td>
+            {% if decision == 'accepted' %}
+            <form id="complete_session" action="/complete_session" method="post">
+                <td>
+                    <input type="hidden" id="username" name="username" value="{{ name }}" />
+                    <input type="hidden" id="decision" name="decision" value="{{ decision }}" />
+                </td>
+                <td><button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit"
+                        data-callback="onSubmit" data-action="submit">Completed Session</button></td>
+            </form>
+            {% else %}
+            <form id="complete_session" action="/complete_session" method="post">
+                <td>
+                    <input type="hidden" id="username" name="username" value="{{ name }}" />
+                    <input type="hidden" id="decision" name="decision" value="{{ decision }}" />
+                </td>
+                <td><button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit"
+                        data-callback="onSubmit" data-action="submit">X</button></td>
+            </form>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

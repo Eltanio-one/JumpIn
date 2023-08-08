@@ -71,6 +71,27 @@ def fetch_rows(query: str, arguments: tuple = None) -> list:
         print(error)
 
 
+def fetch_dict(query: str, arguments: tuple = None) -> dict:
+    try:
+        conn = connect(
+            host=HOST,
+            user=USERNAME,
+            password=PASSWORD,
+            dbname=DBNAME,
+            port=PORT,
+        )
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(query, arguments)
+                columns = [column[0] for column in cur.description]
+                results = []
+                for row in cur.fetchall():
+                    results.append(dict(zip(columns, row)))
+                return results
+    except (Exception, DatabaseError) as error:
+        print(error)
+
+
 def modify_rows(query: str, arguments: tuple = None) -> None:
     try:
         conn = connect(
@@ -146,7 +167,7 @@ def machine_matches(user_id: int, rows: list) -> dict:
             if user_machines[j] == row[1][j]:
                 matches_output[row[2]].append(machine)
         if not matches_output[row[2]]:
-            matches_output[row[2]] = "no matches"
+            matches_output[row[2]] = ["no matches"]
     return matches_output
 
 

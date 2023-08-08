@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+
+{% block title %} Plan your session! {% endblock %}
+
+{% block main %}
+
+<h2 class="title_one">Your Matches</h2>
+<p></p>
+<script async src="https://www.google.com/recaptcha/api.js"></script>
+<script>
+    function onSubmit(token) {
+        document.getElementById("login_form").submit();
+    }
+</script>
+<h2>All lobby members potential matches will be listed below!</h2>
+<table class="table table-borderless" style="text-align: center; margin-left: auto; margin-right: auto; width: 500px;">
+    <tbody>
+        <tr>
+            <td>Lobby member</td>
+            <td>Lobby member/s with closest matching routine</td>
+        </tr>
+        {% for user, matching_users in rows.items() %}
+        <tr class="table_one">
+            <td>{{ user.capitalize() }}</td>
+            <td>{{ " | ".join(matching_users).title() }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<table class="table table-borderless" style="text-align: center; margin-left: auto; margin-right: auto; width: 500px;">
+    <tbody>
+        <tr>
+            <td>Lobby member</td>
+            <td>Matching machines with you</td>
+        </tr>
+        {% for user, machines in user_matches.items() %}
+        <tr class="table_one" id="potential_match_table">
+            <td>{{ user.capitalize() }}</td>
+            <td>{{ " | ".join(machines).title() }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<p>Choose the user you'd like to JumpIn with!</p>
+<form id="propose_session" action="/propose_session" method="post">
+    <select class="form-control mx-auto w-auto" id="chosen_user" name="chosen_user">
+        <option disabled>Users</option>
+        {% for user in user_matches.keys() %}
+        <option value="{{ user.capitalize() }}">{{ user.capitalize() }}</option>
+        {% endfor %}
+    </select>
+    <button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit" data-callback="onSubmit"
+        data-action="submit">JumpIn</button>
+</form>
+{% endblock %}

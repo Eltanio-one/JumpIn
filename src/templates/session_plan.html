@@ -59,33 +59,5 @@
         data-action="submit">Submit</button>
 </form>
 <p></p>
-<h2>All lobby members potential matches will be listed below!</h2>
-<table class="table table-borderless" style="text-align: center; margin-left: auto; margin-right: auto; width: 500px;">
-    <tbody>
-        <tr>
-            <td>Lobby member</td>
-            <td>Lobby member/s with closest matching routine</td>
-        </tr>
-        {% for user, matching_users in rows.items() %}
-        <tr class="table_one">
-            <td>{{ user }}</td>
-            <td>{{ matching_users }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-<table class="table table-borderless" style="text-align: center; margin-left: auto; margin-right: auto; width: 500px;">
-    <tbody>
-        <tr>
-            <td>Lobby member</td>
-            <td>Matching machines with you</td>
-        </tr>
-        {% for user, machines in user_matches.items() %}
-        <tr class="table_one">
-            <td>{{ user }}</td>
-            <td>{{ machines }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+
 {% endblock %}

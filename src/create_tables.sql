@@ -117,13 +117,42 @@ def create_tables():
         )
         """,
         """
-        CREATE TABLE user_session (
+        CREATE TABLE archived_sessions (
             id SERIAL PRIMARY KEY,
             user_id INT,
-            request_time TIMESTAMP,
-            machine_list VARCHAR[],
-            compared_users INT[],
-            FOREIGN KEY (user_id) REFERENCES users (user_id) ON UPDATE CASCADE ON DELETE CASCADE
+            matchee_id INT,
+            machines VARCHAR(255)[],
+            gym_id INT,
+            booking_date VARCHAR(255),
+            FOREIGN KEY (user_id) REFERENCES users (user_id) ON UPDATE CASCADE ON DELETE CASCADE,
+            FOREIGN KEY (matchee_id) REFERENCES users (user_id) ON UPDATE CASCADE ON DELETE CASCADE,
+            FOREIGN KEY (gym_id) REFERENCES gym (gym_id) ON UPDATE CASCADE ON DELETE CASCADE
+        )
+        """,
+        """
+        CREATE TABLE potential_matches (
+            id SERIAL PRIMARY KEY,
+            user_id INT,
+            matchee_id INT,
+            machines VARCHAR(255)[],
+            gym_id INT,
+            FOREIGN KEY (user_id) REFERENCES users (user_id) ON UPDATE CASCADE ON DELETE CASCADE,
+            FOREIGN KEY (matchee_id) REFERENCES users (user_id) ON UPDATE CASCADE ON DELETE CASCADE,
+            FOREIGN KEY (gym_id) REFERENCES gym (gym_id) ON UPDATE CASCADE ON DELETE CASCADE
+        )
+        """,
+        """
+        CREATE TABLE requested_sessions (
+            id SERIAL PRIMARY KEY,
+            user_id INT,
+            matchee_id INT,
+            machines VARCHAR(255)[],
+            gym_id INT,
+            declined BOOL,
+            accepted BOOL,
+            FOREIGN KEY (user_id) REFERENCES users (user_id) ON UPDATE CASCADE ON DELETE CASCADE,
+            FOREIGN KEY (matchee_id) REFERENCES users (user_id) ON UPDATE CASCADE ON DELETE CASCADE,
+            FOREIGN KEY (gym_id) REFERENCES gym (gym_id) ON UPDATE CASCADE ON DELETE CASCADE
         )
         """)
     

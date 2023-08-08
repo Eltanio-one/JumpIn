@@ -8,6 +8,7 @@ from helpers import (
     gym_only,
     fetch_row,
     fetch_rows,
+    fetch_dict,
     modify_rows,
     verify_password,
     verify_email,
@@ -18,6 +19,7 @@ from helpers import (
 )
 import sys
 import os
+
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -246,13 +248,188 @@ def register():
         return redirect("/login")
 
 
-# need to make it specific to gym at some stage
+@app.route("/cancel_request", methods=["POST"])
+@login_required
+def cancel_request():
+    matchee = request.form.get("username")
+    matchee_id = fetch_row(
+        """SELECT user_id FROM users WHERE username = %s""", (matchee,)
+    )[0]
+    modify_rows(
+        """DELETE FROM requested_sessions WHERE user_id = %s AND matchee_id = %s""",
+        (session["user_id"], matchee_id),
+    )
+    return redirect("/session_requests")
+
+
+@app.route("/decline_request", methods=["POST"])
+@login_required
+def decline_request():
+    matcher = request.form.get("username")
+    matcher_id = fetch_row(
+        """SELECT user_id FROM users WHERE username = %s""", (matcher,)
+    )
+
+    modify_rows(
+        """UPDATE requested_sessions SET declined = true WHERE user_id = %s AND matchee_id = %s""",
+        (matcher_id, session["user_id"]),
+    )
+    return redirect("/session_requests")
+
+
+@app.route("/accept_request", methods=["POST"])
+@login_required
+def accept_request():
+    matcher = request.form.get("username")
+    matcher_id = fetch_row(
+        """SELECT user_id FROM users WHERE username = %s""", (matcher,)
+    )
+
+    modify_rows(
+        """UPDATE requested_sessions SET accepted = true WHERE user_id = %s AND matchee_id = %s""",
+        (matcher_id, session["user_id"]),
+    )
+    return redirect("/session_requests")
+
+
+@app.route("/session_requests", methods=["GET"])
+@login_required
+def session_requests():
+    if request.method == "GET":
+        # first get requested sessions
+        your_requests = fetch_rows(
+            """SELECT * FROM requested_sessions WHERE user_id = %s""",
+            (session["user_id"],),
+        )
+        # for your requests, make a dict of matchee name and machines matched
+        your_requests_output, others_requests_output = {}, {}
+        for row in your_requests:
+            username = fetch_row(
+                """SELECT username FROM users WHERE user_id = %s""", (row[2],)
+            )[0]
+            your_requests_output[username] = row[3]
+        others_requests = fetch_rows(
+            """SELECT * FROM requested_sessions WHERE accepted = false AND declined = false AND matchee_id = %s""",
+            (session["user_id"],),
+        )
+
+        for row in others_requests:
+            username = fetch_row(
+                """SELECT username FROM users WHERE user_id = %s""", (row[1],)
+            )[0]
+            others_requests_output[username] = row[3]
+
+        # need a notifications table that shows accepted/declined!
+        notifications = fetch_rows(
+            """SELECT * FROM requested_sessions WHERE accepted = true OR declined = true"""
+        )
+        notifications_output = {}
+        if not notifications:
+            notifications = ""
+        else:
+            results = fetch_dict(
+                """SELECT * FROM requested_sessions WHERE accepted = true OR declined = true"""
+            )[0]
+            username = fetch_row(
+                """SELECT username FROM users WHERE user_id = %s""",
+                (results["matchee_id"],),
+            )[0]
+            for key, value in results.items():
+                if value == True:
+                    notifications_output[username] = key
+
+        others_requests_output["bob"] = ["chest press"]
+        return render_template(
+            "session_requests.html",
+            your_requests=your_requests_output,
+            others_requests=others_requests_output,
+            notifications=notifications_output,
+        )
+
+
+@app.route("/complete_session", methods=["POST"])
+@login_required
+def complete_session():
+    username = request.form.get("username")
+    decision = request.form.get("decision")
+    matchee_id = fetch_row(
+        """SELECT user_id FROM users WHERE username = %s""", (username,)
+    )[0]
+    req_session = fetch_row(
+        """SELECT * FROM requested_sessions WHERE user_id = %s AND matchee_id = %s""",
+        (session["user_id"], matchee_id),
+    )
+    print(req_session)
+    # if decision == "accepted":
+    # modify_rows(
+    #     """INSERT INTO archived_sessions (user_id, matchee_id, machines, gym_id, booking_date) VALUES (%s, %s, %s, %s, %s)""",
+    #     (
+    #         req_session[1],
+    #         req_session[2],
+    #         req_session[3],
+    #         req_session[4],
+    #         get_time(),
+    #     ),
+    # )
+    modify_rows(
+        """DELETE FROM requested_sessions WHERE user_id = %s AND matchee_id = %s""",
+        (session["user_id"], matchee_id),
+    )
+
+    return redirect("/session_requests")
+
+
+@app.route("/propose_session", methods=["GET", "POST"])
+@login_required
+def propose_session():
+    if request.method == "POST":
+        matchee = request.form.get("chosen_user")
+
+        # add the selected session request to a different table
+        # this means collect the db entry between matcher and matchee
+        # and transfer to requested sessions table
+        matchee_id = fetch_row(
+            """SELECT user_id FROM users WHERE username = %s""", ("t",)
+        )[0]
+
+        requested_match = fetch_row(
+            """SELECT * FROM potential_matches WHERE user_id = %s AND matchee_id = %s""",
+            (session["user_id"], matchee_id),
+        )
+
+        # modify_rows(
+        #     """INSERT INTO requested_sessions (user_id, matchee_id, machines, gym_id) VALUES (%s, %s, %s, %s)""",
+        #     (
+        #         requested_match[1],
+        #         requested_match[2],
+        #         requested_match[3],
+        #         requested_match[4],
+        #     ),
+        # )
+
+        modify_rows(
+            """INSERT INTO requested_sessions (user_id, matchee_id, machines, gym_id) VALUES (%s, %s, %s, %s)""",
+            (
+                session["user_id"],
+                1,
+                ["chest press"],
+                1,
+            ),
+        )
+        # remove all potential matches linked to the matcher from potentials
+        modify_rows(
+            """DELETE FROM potential_matches WHERE user_id = %s""",
+            (session["user_id"],),
+        )
+
+        # return render_template() for a page which will show your requests and peoples requests to you?
+        return redirect("/session_requests")
+
+
 @app.route("/session_plan", methods=["GET", "POST"])
 @login_required
 def session_plan():
     if request.method == "GET":
-        # get machines from users gym
-
         if not (
             gym_id := fetch_row(
                 """SELECT gym_id FROM users WHERE user_id = %s""", (session["user_id"],)
@@ -333,7 +510,7 @@ def session_plan():
                     "chest press",
                     "chest press",
                 ],
-                "dan",
+                "paulie",
             ),
             (
                 2,
@@ -390,7 +567,15 @@ def session_plan():
             matches_output = matching_algorithm(rows)
             user_matches = machine_matches(session["user_id"], rows)
 
-            """need to figure out how to enable users to accept a session proposal"""
+            """could add all potential matches to user_matches table, then when the user chooses we eliminate all that were not between them"""
+            for user, machines in user_matches.items():
+                matchee_id = fetch_row(
+                    """SELECT user_id FROM users WHERE username = %s""", (user,)
+                )
+                modify_rows(
+                    """INSERT INTO potential_matches (user_id, matchee_id, machines, gym_id) VALUES (%s, %s, %s, %s)""",
+                    (session["user_id"], matchee_id, machines, gym_id),
+                )
 
             """Add the machines that are provided to each users usage db"""
             for machine in machine_list:
@@ -411,14 +596,10 @@ def session_plan():
                         """UPDATE usage SET uses = uses + 1 WHERE user_id = %s AND machine_id = %s""",
                         (session["user_id"], machine_id),
                     )
-                available_machines = fetch_rows(
-                    """SELECT machine_name FROM gym_machines WHERE gym_id = %s""",
-                    (gym_id,),
-                )
+
             return render_template(
-                "session_plan.html",
+                "propose_session.html",
                 rows=matches_output,
-                available_machines=available_machines,
                 user_matches=user_matches,
             )
 
