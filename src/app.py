@@ -20,9 +20,8 @@ from helpers import (
 )
 import sys
 import os
-import random
 from flask_socketio import SocketIO, join_room, leave_room, send
-from string import ascii_uppercase
+
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -31,8 +30,9 @@ app = Flask(__name__)
 
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
+app.config["SESSION_COOKIE_NAME"] = "Cookie"
 Session(app)
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 rooms = {}
 
