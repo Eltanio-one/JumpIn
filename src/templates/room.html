@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+
+{% block title %} Room {% endblock %}
+
+{% block main %}
+
+<p></p>
+<script async src="https://www.google.com/recaptcha/api.js"></script>
+<script>
+    function onSubmit(token) {
+        document.getElementById("login_form").submit();
+    }
+</script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.min.js"></script>
+<div class="message-box">
+    <h2 class="title_one">Room {{ code }}</h2>
+    <div class="messages" id="messages"></div>
+    <div class="inputs">
+        <input class="message-box" type="text" rows="3" placeholder="Message" name="message" id="message">
+        <p></p>
+        <button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="button"
+            onClick="sendMessage()">Send</button>
+    </div>
+</div>
+<script type="text/javascript">
+    var socketio = io();
+
+    const sendMessage = () => {
+        console.log("send");
+    };
+</script>
+{% endblock %}

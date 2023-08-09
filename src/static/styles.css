@@ -119,3 +119,35 @@ input[type="date"] {
 .leftpage {
     margin-left: 750px;
 }
+
+.message-box {
+    border-color: black;
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 10px;
+    background-color: whitesmoke;
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    width: 80vw;
+    align-items: stretch;
+}
+
+.messages {
+    overflow-y: scroll;
+    flex: 1;
+    width: 100px;
+}
+
+.inputs {
+    padding: 10px;
+    display: flex;
+}
+
+h4 {
+    text-align: center
+}
+
+#message {
+    flex: 1
+}

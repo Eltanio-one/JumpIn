@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block title %} Chat {% endblock %}
+
+{% block main %}
+
+<h2 class="title_one">Enter a Chat Room</h2>
+<p></p>
+<script async src="https://www.google.com/recaptcha/api.js"></script>
+<script>
+    function onSubmit(token) {
+        document.getElementById("login_form").submit();
+    }
+</script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.min.js"></script>
+<form action="/chatroom" method="post">
+    <input type="text" placeholder="Username" name="username" value="{{ username }}">
+    <input type="text" placeholder="Room Code" name="code" value="{{ code }}">
+    <p></p>
+    <button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit" data-callback="onSubmit"
+        data-action="submit" name="join">Join a room</button>
+    <button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit" data-callback="onSubmit"
+        data-action="submit" name="create">Create a room</button>
+</form>
+{% endblock %}

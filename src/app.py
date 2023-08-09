@@ -1,5 +1,5 @@
 from classes import UserService, GymService
-from flask import Flask, render_template, session, request, redirect, flash
+from flask import Flask, render_template, session, request, redirect, flash, url_for
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
@@ -16,10 +16,13 @@ from helpers import (
     machine_matches,
     get_time,
     check_hour,
+    generate_unique_code,
 )
 import sys
 import os
-
+import random
+from flask_socketio import SocketIO, join_room, leave_room, send
+from string import ascii_uppercase
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -29,6 +32,9 @@ app = Flask(__name__)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
+socketio = SocketIO(app)
+
+rooms = {}
 
 
 @app.after_request
@@ -714,6 +720,62 @@ def change_password():
     return redirect("/logout")
 
 
+@app.route("/chatroom", methods=["POST", "GET"])
+@login_required
+def chatroom():
+    if request.method == "GET":
+        return render_template("chatroom.html")
+    if request.method == "POST":
+        session["room"] = None
+        username = request.form.get("username")
+        code = request.form.get("code")
+        join = request.form.get("join", False)
+        create = request.form.get("create", False)
+
+        if not username:
+            flash("Please enter your username")
+            return render_template("chatroom.html", code=code, username=username)
+
+        if join != False and not code:
+            flash("Please enter a room code")
+            return render_template("chatroom.html", code=code, username=username)
+
+        room = code
+        if create != False:
+            room = generate_unique_code(4, rooms)
+            rooms[room] = {"members": 0, "messages": []}
+        elif code not in rooms:
+            flash("Room doesn't exist")
+            return render_template("chatroom.html", code=code, username=username)
+
+        session["room"] = room
+        return redirect(url_for("room", code=code))
+
+
+@app.route("/room/<code>")
+@login_required
+def room(code):
+    room = session["room"]
+    if not room or not session["user_id"] or room not in rooms:
+        return redirect("/index")
+    return render_template("room.html", code=code)
+
+
+@socketio.on("connect")
+def connect(auth):
+    room = session["room"]
+    username = session["user"].username
+    if not room or not username:
+        return
+    if room not in rooms:
+        leave_room(room)
+        return
+    join_room(room)
+    send({"username": username, "message": "has entered the room"}, to=room)
+    rooms[room]["members"] += 1
+    print(f"{username} joined room {room}")
+
+
 @app.route("/user_profile")
 @login_required
 def user_profile():
@@ -1010,4 +1072,4 @@ def logout():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    socketio.run(app, debug=True)

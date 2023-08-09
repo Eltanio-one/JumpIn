@@ -8,6 +8,8 @@ import numpy as np
 from datetime import datetime
 import sys
 import os
+import random
+from string import ascii_uppercase
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -186,3 +188,15 @@ def check_hour() -> str:
         return "Good Afternoon,"
     else:
         return "Good Evening,"
+
+
+def generate_unique_code(length, rooms):
+    while True:
+        code = ""
+        for _ in range(length):
+            code += random.choice(ascii_uppercase)
+
+        if code not in rooms:
+            break
+
+    return code
