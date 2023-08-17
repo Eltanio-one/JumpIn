@@ -17,22 +17,30 @@ from helpers import (
     get_time,
     check_hour,
     generate_unique_code,
+    reformat_rows,
 )
 import sys
 import os
+import requests
 from flask_socketio import SocketIO, join_room, leave_room, send
-
+from keys import SITE_KEY, SECRET_KEY
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 app = Flask(__name__)
 
+SITE_KEY = SITE_KEY
+SECRET_KEY = SECRET_KEY
+VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify"
+
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 app.config["SESSION_COOKIE_NAME"] = "Cookie"
+app.config["SECRET_KEY"] = "secret!"
 Session(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app)
+socketio.init_app(app, cors_allowed_origins="*")
 
 rooms = {}
 
@@ -42,9 +50,6 @@ def after_request(response):
     """Ensure responses aren't cached"""
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Expires"] = 0
-    # HTTP/1.0 implmentation of cache-control
-    # response.headers["Pragma"] = "no-cache"
-    # return the response
     return response
 
 
@@ -55,6 +60,11 @@ def index():
     return render_template(
         "index.html", username=session["user"].username, time_response=time_response
     )
+
+
+@app.route("/")
+def start():
+    return render_template("login.html", SITE_KEY=SITE_KEY)
 
 
 @app.route("/index_gym")
@@ -88,13 +98,13 @@ def login():
         else:
             row = fetch_row("""SELECT * FROM users WHERE email = (%s)""", (usermail,))
 
-        # response = request.form["g-recaptcha-response"]
-        # verify_response = requests.post(
-        #     url=f"{VERIFY_URL}?secret={SECRET_KEY}&response={response}"
-        # ).json()
-        # if verify_response["success"] == False or verify_response["score"] < 0.5:
-        #     flash("ReCaptcha failed!")
-        #     return render_template("login.html", site_key=SITE_KEY)
+        response = request.form.get("g-recaptcha-response")
+        verify_response = requests.post(
+            url=f"{VERIFY_URL}?secret={SECRET_KEY}&response={response}"
+        ).json()
+        if verify_response["success"] == False or verify_response["score"] < 0.5:
+            flash("ReCaptcha failed!")
+            return render_template("login.html", site_key=SITE_KEY)
 
         if not row:
             flash("No account found")
@@ -102,8 +112,7 @@ def login():
 
         if len(row) != 8 or not check_password_hash(row[6], password):
             flash("Invalid username/email and/or password")
-            # return render_template("login.html", site_key=SITE_KEY)
-            return redirect("/login")
+            return render_template("login.html", site_key=SITE_KEY)
 
         user_service = UserService
         new_user = user_service.register_user(
@@ -142,13 +151,13 @@ def login_gym():
         else:
             row = fetch_row("""SELECT * FROM gym WHERE gym_name = (%s)""", (usermail,))
 
-        # response = request.form["g-recaptcha-response"]
-        # verify_response = requests.post(
-        #     url=f"{VERIFY_URL}?secret={SECRET_KEY}&response={response}"
-        # ).json()
-        # if verify_response["success"] == False or verify_response["score"] < 0.5:
-        #     flash("ReCaptcha failed!")
-        #     return render_template("login.html", site_key=SITE_KEY)
+        response = request.form.get("g-recaptcha-response")
+        verify_response = requests.post(
+            url=f"{VERIFY_URL}?secret={SECRET_KEY}&response={response}"
+        ).json()
+        if verify_response["success"] == False or verify_response["score"] < 0.5:
+            flash("ReCaptcha failed!")
+            return render_template("login.html", site_key=SITE_KEY)
 
         if not row:
             flash("No account found")
@@ -204,7 +213,13 @@ def register():
                 if key == "date_of_birth":
                     flash(f'Please enter a {key.replace("_", " ")}')
                     return redirect("/register")
-                if key in ["friends", "usage", "hashed_password", "gym"]:
+                if key in [
+                    "friends",
+                    "usage",
+                    "hashed_password",
+                    "gym_id",
+                    "account_creation",
+                ]:
                     continue
                 flash(f"Please enter a {key}")
                 return redirect("/register")
@@ -243,10 +258,14 @@ def register():
             ),
         )
 
+        id = fetch_rows(
+            """SELECT user_id FROM users WHERE username = %s""", (new_user.username,)
+        )[0]
+
         for language in new_user.languages:
             modify_rows(
                 """INSERT INTO languages (user_id, language) VALUES (%s, %s)""",
-                (session["user_id"], language),
+                (id, language),
             )
 
         del new_user
@@ -344,13 +363,50 @@ def session_requests():
                 if value == True:
                     notifications_output[username] = key
 
+        chat_requests = reformat_rows(
+            fetch_rows(
+                """SELECT requester from rooms WHERE requestee = %s""",
+                (session["user"].username,),
+            )
+        )
+
         others_requests_output["bob"] = ["chest press"]
         return render_template(
             "session_requests.html",
             your_requests=your_requests_output,
             others_requests=others_requests_output,
             notifications=notifications_output,
+            chat_requests=chat_requests,
         )
+
+
+@app.route("/start_chat", methods=["POST"])
+@login_required
+def start_chat():
+    username = request.form.get("username")
+    room = generate_unique_code(4, rooms)
+    rooms[room] = {"members": 0, "messages": []}
+    modify_rows(
+        """INSERT INTO rooms (requester, requestee, code) VALUES (%s, %s, %s)""",
+        (session["user"].username, username, room),
+    )
+    session["room"] = room
+    return redirect(url_for("room", room=room))
+
+
+@app.route("/join_chat", methods=["POST"])
+@login_required
+def join_chat():
+    username = request.form.get("username")
+    room = fetch_row(
+        """SELECT code FROM rooms WHERE requester = %s AND requestee = %s""",
+        (username, session["user"].username),
+    )[0]
+    if not room:
+        flash("Chat no longer active")
+        return redirect("/session_requests")
+    session["room"] = room
+    return redirect(url_for("room", room=room))
 
 
 @app.route("/complete_session", methods=["POST"])
@@ -749,16 +805,27 @@ def chatroom():
             return render_template("chatroom.html", code=code, username=username)
 
         session["room"] = room
-        return redirect(url_for("room", code=code))
+        return redirect(url_for("room", room=room))
 
 
-@app.route("/room/<code>")
+@app.route("/room/<room>")
 @login_required
-def room(code):
-    room = session["room"]
+def room(room):
     if not room or not session["user_id"] or room not in rooms:
         return redirect("/index")
-    return render_template("room.html", code=code)
+    return render_template("room.html", room=room, messages=rooms[room]["messages"])
+
+
+@socketio.on("message")
+def message(data):
+    room = session["room"]
+    username = session["user"].username
+    if room not in rooms:
+        return
+    content = {"username": username, "message": data["data"]}
+    send(content, to=room)
+    rooms[room]["messages"].append(content)
+    print(f"{username}: {data['data']}")
 
 
 @socketio.on("connect")
@@ -774,6 +841,22 @@ def connect(auth):
     send({"username": username, "message": "has entered the room"}, to=room)
     rooms[room]["members"] += 1
     print(f"{username} joined room {room}")
+
+
+@socketio.on("disconnect")
+def disconnect():
+    room = session["room"]
+    username = session["user"].username
+    leave_room(room)
+
+    if room in rooms:
+        rooms[room]["members"] -= 1
+        if rooms[room]["members"] <= 1:
+            modify_rows("""DELETE FROM rooms WHERE code = %s""", (room,))
+            del rooms[room]
+
+    send({"username": username, "message": "has left the room"}, to=room)
+    print(f"{username} has left room {room}")
 
 
 @app.route("/user_profile")

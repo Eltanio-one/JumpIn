@@ -12,6 +12,15 @@
         document.getElementById("login_form").submit();
     }
 </script>
+<script src="https://www.google.com/recaptcha/enterprise.js" async defer></script>
+<script src="https://www.google.com/recaptcha/enterprise.js?render=6LdJBJonAAAAAAzQynBb8W1WG1FDi2Z5_sKQuhB8"></script>
+<script>
+    grecaptcha.enterprise.ready(function () {
+        grecaptcha.enterprise.execute('6LdREo4lAAAAAJ2KMCtHqwznsgE1yEWfuAiKyjxo', { action: 'login' }).then(function (token) {
+
+        });
+    });
+</script>
 <form id="login_form" action="/login" method="post">
     <div class="mb-3">
         <input autocomplete="off" autofocus class="form-control mx-auto w-auto" id="username" name="username"
@@ -20,9 +29,10 @@
     <div class="mb-3">
         <input class="form-control mx-auto w-auto" id="password" name="password" placeholder="Password" type="password">
     </div>
-    <p></p>
-    <button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit" data-callback="onSubmit"
-        data-action="submit">Log In</button>
+    <div class="g-recaptcha">
+        <button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit" data-callback="onSubmit"
+            data-action="submit">Log In</button>
+    </div>
 </form>
 
 <p></p>

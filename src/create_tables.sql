@@ -154,6 +154,14 @@ def create_tables():
             FOREIGN KEY (matchee_id) REFERENCES users (user_id) ON UPDATE CASCADE ON DELETE CASCADE,
             FOREIGN KEY (gym_id) REFERENCES gym (gym_id) ON UPDATE CASCADE ON DELETE CASCADE
         )
+        """,
+        """
+        CREATE TABLE rooms (
+            id SERIAL PRIMARY KEY,
+            requester VARCHAR(255),
+            requestee VARCHAR(255),
+            code VARCHAR(255)
+        )
         """)
     
     try:

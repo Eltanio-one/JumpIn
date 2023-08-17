@@ -28,6 +28,24 @@ class TestCase(unittest.TestCase):
         assert self.app is not None
         assert app == self.app
 
+    def test_signup_new_user(self):
+        """Test signup page when a new user signs up."""
+
+        result = self.app.post(
+            "/register",
+            data={
+                "username": "tester",
+                "email": "abc123@gmail.com",
+                "date_of_birth": "01/01/1911",
+                "password": "Password123@!",
+                "name": "John Smith",
+                "confirmation": "Password123@!",
+                "languages": "af",
+            },
+            follow_redirects=True,
+        )
+        self.assertEqual(result.status_code, 200)
+
 
 if __name__ == "__main__":
     unittest.main()

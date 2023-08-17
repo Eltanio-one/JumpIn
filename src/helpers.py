@@ -200,3 +200,10 @@ def generate_unique_code(length, rooms):
             break
 
     return code
+
+
+def reformat_rows(rows: list) -> list:
+    return_rows = []
+    for row in rows:
+        return_rows.append("".join(row))
+    return return_rows

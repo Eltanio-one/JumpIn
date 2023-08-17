@@ -77,6 +77,13 @@
                 <td><button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit"
                         data-callback="onSubmit" data-action="submit">Completed Session</button></td>
             </form>
+            <form id="start_chat" action="/start_chat" method="post">
+                <td>
+                    <input type="hidden" id="username" name="username" value="{{ name }}" />
+                </td>
+                <td><button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit"
+                        data-callback="onSubmit" data-action="submit">Start a chat</button></td>
+            </form>
             {% else %}
             <form id="complete_session" action="/complete_session" method="post">
                 <td>
@@ -86,7 +93,31 @@
                 <td><button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit"
                         data-callback="onSubmit" data-action="submit">X</button></td>
             </form>
+            <form id="start_chat" action="/start_chat" method="post">
+                <td>
+                    <input type="hidden" id="username" name="username" value="{{ name }}" />
+                </td>
+                <td><button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit"
+                        data-callback="onSubmit" data-action="submit">Start a chat</button></td>
+            </form>
             {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<h2>Your chat invites</h2>
+<table class="table table-borderless" style="text-align: center; margin-left: auto; margin-right: auto; width: 500px;">
+    <tbody>
+        {% for name in chat_requests %}
+        <tr>
+            <td>{{ name }} wants to chat!</td>
+            <form id="join_chat" action="/join_chat" method="post">
+                <td>
+                    <input type="hidden" id="username" name="username" value="{{ name }}" />
+                </td>
+                <td><button class="g-recaptcha btn btn-primary" data-sitekey="{{ site_key }}" type="submit"
+                        data-callback="onSubmit" data-action="submit">Join Chat</button></td>
+            </form>
         </tr>
         {% endfor %}
     </tbody>

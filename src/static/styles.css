@@ -137,7 +137,7 @@ input[type="date"] {
 .messages {
     overflow-y: scroll;
     flex: 1;
-    width: 100px;
+    width: 400px;
 }
 
 .inputs {
@@ -151,4 +151,24 @@ h4 {
 
 #message {
     flex: 1
+}
+
+.content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.text {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.muted {
+    font-size: 10px;
+    color: darkgray;
 }
