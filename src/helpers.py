@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import redirect, Flask, session, flash
+from flask import redirect, current_app, session, flash
 from psycopg2 import connect, DatabaseError
 from src.keys import HOST, USERNAME, PASSWORD, DBNAME, PORT
 from string import punctuation
@@ -18,7 +18,9 @@ sys.path.append(os.path.dirname(SCRIPT_DIR))
 def login_required(f):
     @wraps(f)
     def wrap(*args, **kwargs):
-        if not session.get("user_id"):
+        if current_app.config.get("LOGIN_DISABLED", True):
+            return f(*args, **kwargs)
+        elif not session.get("user_id"):
             return redirect("/login")
         return f(*args, **kwargs)
 

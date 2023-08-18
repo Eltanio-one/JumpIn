@@ -80,7 +80,7 @@ def index_gym():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "GET":
-        return render_template("login.html")
+        return render_template("login.html", site_key=SITE_KEY)
     elif request.method == "POST":
         session.clear()
         usermail, password = request.form.get("username"), request.form.get("password")
@@ -165,8 +165,7 @@ def login_gym():
 
         if len(row) != 6 or not check_password_hash(row[5], password):
             flash("Invalid username/email and/or password")
-            # return render_template("login.html", site_key=SITE_KEY)
-            return redirect("/login")
+            return render_template("login.html", site_key=SITE_KEY)
 
         gym_service = GymService
         new_gym = gym_service.register_gym(
@@ -277,12 +276,17 @@ def register():
 @login_required
 def cancel_request():
     matchee = request.form.get("username")
-    matchee_id = fetch_row(
-        """SELECT user_id FROM users WHERE username = %s""", (matchee,)
-    )[0]
+    if not (
+        matchee_id := fetch_row(
+            """SELECT user_id FROM users WHERE username = %s""", (matchee,)
+        )
+    ):
+        flash("Please choose a matchee")
+        return redirect("/session_requests")
+
     modify_rows(
         """DELETE FROM requested_sessions WHERE user_id = %s AND matchee_id = %s""",
-        (session["user_id"], matchee_id),
+        (session["user_id"], matchee_id[0]),
     )
     return redirect("/session_requests")
 
@@ -291,13 +295,17 @@ def cancel_request():
 @login_required
 def decline_request():
     matcher = request.form.get("username")
-    matcher_id = fetch_row(
-        """SELECT user_id FROM users WHERE username = %s""", (matcher,)
-    )
+    if not (
+        matcher_id := fetch_row(
+            """SELECT user_id FROM users WHERE username = %s""", (matcher,)
+        )
+    ):
+        flash("Please choose a matcher")
+        return redirect("/session_requests")
 
     modify_rows(
         """UPDATE requested_sessions SET declined = true WHERE user_id = %s AND matchee_id = %s""",
-        (matcher_id, session["user_id"]),
+        (matcher_id[0], session["user_id"]),
     )
     return redirect("/session_requests")
 
@@ -321,12 +329,11 @@ def accept_request():
 @login_required
 def session_requests():
     if request.method == "GET":
-        # first get requested sessions
         your_requests = fetch_rows(
             """SELECT * FROM requested_sessions WHERE user_id = %s""",
             (session["user_id"],),
         )
-        # for your requests, make a dict of matchee name and machines matched
+
         your_requests_output, others_requests_output = {}, {}
         for row in your_requests:
             username = fetch_row(
@@ -334,7 +341,7 @@ def session_requests():
             )[0]
             your_requests_output[username] = row[3]
         others_requests = fetch_rows(
-            """SELECT * FROM requested_sessions WHERE accepted = false AND declined = false AND matchee_id = %s""",
+            """SELECT * FROM requested_sessions WHERE accepted IS NULL AND declined IS NULL AND matchee_id = %s""",
             (session["user_id"],),
         )
 
@@ -344,7 +351,6 @@ def session_requests():
             )[0]
             others_requests_output[username] = row[3]
 
-        # need a notifications table that shows accepted/declined!
         notifications = fetch_rows(
             """SELECT * FROM requested_sessions WHERE accepted = true OR declined = true"""
         )
@@ -370,7 +376,6 @@ def session_requests():
             )
         )
 
-        others_requests_output["bob"] = ["chest press"]
         return render_template(
             "session_requests.html",
             your_requests=your_requests_output,
@@ -401,10 +406,11 @@ def join_chat():
     room = fetch_row(
         """SELECT code FROM rooms WHERE requester = %s AND requestee = %s""",
         (username, session["user"].username),
-    )[0]
+    )
     if not room:
         flash("Chat no longer active")
         return redirect("/session_requests")
+    room = room[0]
     session["room"] = room
     return redirect(url_for("room", room=room))
 
@@ -416,23 +422,24 @@ def complete_session():
     decision = request.form.get("decision")
     matchee_id = fetch_row(
         """SELECT user_id FROM users WHERE username = %s""", (username,)
-    )[0]
+    )
+    matchee_id = matchee_id[0]
     req_session = fetch_row(
         """SELECT * FROM requested_sessions WHERE user_id = %s AND matchee_id = %s""",
         (session["user_id"], matchee_id),
     )
-    print(req_session)
-    # if decision == "accepted":
-    # modify_rows(
-    #     """INSERT INTO archived_sessions (user_id, matchee_id, machines, gym_id, booking_date) VALUES (%s, %s, %s, %s, %s)""",
-    #     (
-    #         req_session[1],
-    #         req_session[2],
-    #         req_session[3],
-    #         req_session[4],
-    #         get_time(),
-    #     ),
-    # )
+
+    if decision == "accepted":
+        modify_rows(
+            """INSERT INTO archived_sessions (user_id, matchee_id, machines, gym_id, booking_date) VALUES (%s, %s, %s, %s, %s)""",
+            (
+                req_session[1],
+                req_session[2],
+                req_session[3],
+                req_session[4],
+                get_time(),
+            ),
+        )
     modify_rows(
         """DELETE FROM requested_sessions WHERE user_id = %s AND matchee_id = %s""",
         (session["user_id"], matchee_id),
@@ -447,44 +454,41 @@ def propose_session():
     if request.method == "POST":
         matchee = request.form.get("chosen_user")
 
-        # add the selected session request to a different table
-        # this means collect the db entry between matcher and matchee
-        # and transfer to requested sessions table
         matchee_id = fetch_row(
-            """SELECT user_id FROM users WHERE username = %s""", ("t",)
-        )[0]
+            """SELECT user_id FROM users WHERE username = %s""", (matchee)
+        )
+        matchee_id = matchee_id[0]
 
         requested_match = fetch_row(
             """SELECT * FROM potential_matches WHERE user_id = %s AND matchee_id = %s""",
             (session["user_id"], matchee_id),
         )
 
-        # modify_rows(
-        #     """INSERT INTO requested_sessions (user_id, matchee_id, machines, gym_id) VALUES (%s, %s, %s, %s)""",
-        #     (
-        #         requested_match[1],
-        #         requested_match[2],
-        #         requested_match[3],
-        #         requested_match[4],
-        #     ),
-        # )
+        modify_rows(
+            """INSERT INTO requested_sessions (user_id, matchee_id, machines, gym_id) VALUES (%s, %s, %s, %s)""",
+            (
+                requested_match[1],
+                requested_match[2],
+                requested_match[3],
+                requested_match[4],
+            ),
+        )
 
         modify_rows(
             """INSERT INTO requested_sessions (user_id, matchee_id, machines, gym_id) VALUES (%s, %s, %s, %s)""",
             (
                 session["user_id"],
-                1,
+                7,
                 ["chest press"],
                 1,
             ),
         )
-        # remove all potential matches linked to the matcher from potentials
+
         modify_rows(
             """DELETE FROM potential_matches WHERE user_id = %s""",
             (session["user_id"],),
         )
 
-        # return render_template() for a page which will show your requests and peoples requests to you?
         return redirect("/session_requests")
 
 
@@ -513,6 +517,7 @@ def session_plan():
             """SELECT machine_name FROM gym_machines WHERE gym_id = %s""",
             (gym_id,),
         )
+
         rows, user_matches = {"": ""}, {"": ""}
         return render_template(
             "session_plan.html",
@@ -541,17 +546,17 @@ def session_plan():
         ]
 
         prev_session = fetch_row(
-            """SELECT * FROM user_session WHERE user_id = %s""",
+            """SELECT * FROM user_sessions WHERE user_id = %s""",
             (session["user_id"],),
         )
-        # if prev_session:
-        #     flash(
-        #         "Please cancel your previous session request before submitting another!"
-        #     )
-        #     return redirect("/session_plan")
+        if prev_session:
+            flash(
+                "Please cancel your previous session request before submitting another!"
+            )
+            return redirect("/session_plan")
 
         modify_rows(
-            """INSERT INTO user_session (user_id, user_name, request_time, machine_list) VALUES (%s, %s, %s, %s)""",
+            """INSERT INTO user_sessions (user_id, username, request_time, machine_list) VALUES (%s, %s, %s, %s)""",
             (
                 session["user_id"],
                 session["user"].username,
@@ -560,7 +565,7 @@ def session_plan():
             ),
         )
         rows = fetch_rows(
-            """SELECT user_id, machine_list, user_name FROM user_session ORDER BY request_time LIMIT 5"""
+            """SELECT user_id, machine_list, username FROM user_sessions ORDER BY request_time LIMIT 5"""
         )
         rows = [
             (
@@ -575,7 +580,7 @@ def session_plan():
                 "paulie",
             ),
             (
-                2,
+                7,
                 [
                     "decline bench",
                     "decline bench",
@@ -583,7 +588,7 @@ def session_plan():
                     "olympic weight bench",
                     "incline bench",
                 ],
-                "warren",
+                "test",
             ),
             (
                 3,
@@ -608,7 +613,7 @@ def session_plan():
                 "ligma",
             ),
             (
-                5,
+                6,
                 [
                     "ligma press",
                     "ligma press",
@@ -616,7 +621,7 @@ def session_plan():
                     "ligma press",
                     "ligma press",
                 ],
-                "sugma",
+                "Dan",
             ),
         ]
         if len(rows) < 2:
@@ -1134,7 +1139,6 @@ def repairing():
                 (new_amount, session["user_id"], machine_id),
             )
 
-        # add object code
         gym = gym_service.remove_machines(gym=gym, machine=machine, amount=amount)
         gym = gym_service.add_to_repair(gym=gym, machine=machine, amount=amount)
         return redirect("/repairing")
@@ -1149,9 +1153,9 @@ def logout():
             session["username"] = None
         if session["user"]:
             session["user"] = None
-        return render_template("login.html")
+        return render_template("login.html", site_key=SITE_KEY)
     except KeyError:
-        return render_template("login.html")
+        return render_template("login.html", site_key=SITE_KEY)
 
 
 if __name__ == "__main__":

@@ -116,6 +116,15 @@ def create_tables():
             FOREIGN KEY (machines) REFERENCES machine (machine_id) ON UPDATE CASCADE ON DELETE CASCADE
         )
         """,
+        """ CREATE TABLE user_sessions (
+            id SERIAL PRIMARY KEY,
+            user_id INT,
+            username VARCHAR(255),
+            machine_list VARCHAR(255)[],
+            request_time VARCHAR(255),
+            FOREIGN KEY (user_id) REFERENCES users (user_id) ON UPDATE CASCADE ON DELETE CASCADE
+        )
+        """,
         """
         CREATE TABLE archived_sessions (
             id SERIAL PRIMARY KEY,
