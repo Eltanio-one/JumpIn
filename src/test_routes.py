@@ -2,10 +2,8 @@ import unittest
 import sys
 import os
 import flask_testing
-from flask import Flask, url_for
+from flask import Flask
 from classes import UserService
-from keys import HOST, USERNAME, PASSWORD, DBNAME, PORT
-from psycopg2 import connect, DatabaseError
 from werkzeug.security import generate_password_hash
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))

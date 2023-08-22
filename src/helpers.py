@@ -10,12 +10,17 @@ import sys
 import os
 import random
 from string import ascii_uppercase
+from typing import Callable
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 
-def login_required(f):
+def login_required(f) -> Callable:
+    """
+    Ensure user is logged in.
+    """
+
     @wraps(f)
     def wrap(*args, **kwargs):
         if current_app.config.get("LOGIN_DISABLED", True):
@@ -27,8 +32,11 @@ def login_required(f):
     return wrap
 
 
-# create a helper function to ensure that only gyms can access gym related sites?
-def gym_only(f):
+def gym_only(f) -> Callable:
+    """
+    Ensure gym is logged in.
+    """
+
     @wraps(f)
     def wrap(*args, **kwargs):
         if not session.get("username"):
@@ -40,6 +48,9 @@ def gym_only(f):
 
 
 def fetch_row(query: str, arguments: tuple = None) -> list:
+    """
+    Query postgresql database for one row.
+    """
     try:
         conn = connect(
             host=HOST,
@@ -58,6 +69,9 @@ def fetch_row(query: str, arguments: tuple = None) -> list:
 
 
 def fetch_rows(query: str, arguments: tuple = None) -> list:
+    """
+    Query postgresql database for multiple rows.
+    """
     try:
         conn = connect(
             host=HOST,
@@ -76,6 +90,9 @@ def fetch_rows(query: str, arguments: tuple = None) -> list:
 
 
 def fetch_dict(query: str, arguments: tuple = None) -> dict:
+    """
+    Query postgresql database for a dictionary.
+    """
     try:
         conn = connect(
             host=HOST,
@@ -97,6 +114,9 @@ def fetch_dict(query: str, arguments: tuple = None) -> dict:
 
 
 def modify_rows(query: str, arguments: tuple = None) -> None:
+    """
+    Query postgresql database for to modify an entry.
+    """
     try:
         conn = connect(
             host=HOST,
@@ -113,14 +133,10 @@ def modify_rows(query: str, arguments: tuple = None) -> None:
         print(error)
 
 
-def reformat_rows(rows: tuple) -> list:
-    return_rows = []
-    for row in rows:
-        return_rows.append("".join(row))
-    return return_rows
-
-
 def verify_password(password: str) -> bool:
+    """
+    Ensure password meets criteria.
+    """
     return (
         len(password) >= 8
         and any([char.isdigit() for char in password])
@@ -130,6 +146,9 @@ def verify_password(password: str) -> bool:
 
 
 def verify_email(email: str) -> bool:
+    """
+    Check if email or username provided on login.
+    """
     return fullmatch(
         r"^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
         email,
@@ -137,6 +156,9 @@ def verify_email(email: str) -> bool:
 
 
 def matching_algorithm(rows: list) -> dict:
+    """
+    Match users together based on their provided machines and their order of use.
+    """
     matches = np.zeros((len(rows), len(rows[0][1])))
     for i, _ in enumerate(rows):
         for j, _ in enumerate(rows):
@@ -159,6 +181,9 @@ def matching_algorithm(rows: list) -> dict:
 
 
 def machine_matches(user_id: int, rows: list) -> dict:
+    """
+    Match users and show which machines they have in common with other users.
+    """
     for i, row in enumerate(rows):
         if user_id == row[0]:
             user_machines = row[1]
@@ -175,12 +200,18 @@ def machine_matches(user_id: int, rows: list) -> dict:
     return matches_output
 
 
-def get_time() -> str:
+def get_date() -> str:
+    """
+    Generate current date.
+    """
     now = datetime.now()
     return now.strftime("%d/%m/%Y")
 
 
 def check_hour() -> str:
+    """
+    Check current time to generate specific index greeting.
+    """
     now = datetime.now()
     current_time = now.strftime("%H")
     current_time = int(current_time)
@@ -193,6 +224,9 @@ def check_hour() -> str:
 
 
 def generate_unique_code(length, rooms):
+    """
+    Generate unique room code.
+    """
     while True:
         code = ""
         for _ in range(length):
@@ -205,6 +239,9 @@ def generate_unique_code(length, rooms):
 
 
 def reformat_rows(rows: list) -> list:
+    """
+    Reformat rows passsed from postgresql query.
+    """
     return_rows = []
     for row in rows:
         return_rows.append("".join(row))
