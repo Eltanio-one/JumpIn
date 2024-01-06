@@ -4,7 +4,7 @@ Please note that although this app is full-stack, front-end was not prioritised 
 
 Any gym can create an account, and then list their available machines that users can plan to use in a session. If any machines are under repair, the gym can list this and it will update the available machines that are shown to the users.
 When users create an account, they can register to their gym to enable session planning. Planning a session is the crux of JumpIn, where a user lists 5 machines in order they wish to use, and the JumpIn algorithm will search through a lobby of other users sessions and return a list of optimal JumpIn partners to each user based on how similarly matched the sessions are.
-Users can then send a session request to the user they want to JumpIn with, and this user can accept or decline the request and start a chat with the requester to organise when to meet to JumpIn.
+Users can then send a session request to the user they want to JumpIn with, and this user can accept or decline the request and start a chat with the requester to organise when to meet and JumpIn.
 
 JumpIn v1 was created by Dan Haver, who can be contacted via [email](mailto:haverd08@gmail.com).
 
@@ -37,10 +37,13 @@ Back-end: Python, Flask, Jinja2, Postgresql, Psycopg2.
 - Requests that have been sent by other users can be accepted or declined, and if accepted the user can start a private chat with the user, whom must accept the chat request, to organise their JumpIn meet up.
 - Chat requests that other users have sent to the current user are shown here too for them to accept or decline.
 
+### Chatting
+- Once a requestee has accepted the session request of a requester, the option to chat using a chatroom created using socketio is available. A unique chatroom is generated only accessible by the two users, and messages are dynamically presented to each user to enable them to organise when to meet and/or exchange details etc. Once the chat is complete, the room is deleted and messages removed.
+
 ## Gym-Specific
 
 ### Gym Profile
 - Differs from the user profile in that information is not shown, but links to add opening times which will be shown to users (implementation in v2), add machines the gym owns, note machines which are under repair which will be reflected in the choices members of that gym have during session plans, and changing password/deleting the account are stored here.
 
 # Version 2 Plans
-I plan to add functionality to contact me via SMTP, cancel a session plan if the lobby hasn't filled and users wish to retract, and improve the front-end of the app.
+I plan to add functionality to contact me via SMTP, and improve the front-end of the app.
