@@ -177,29 +177,3 @@ class GymService:
     def __repr__(gym: Gym):
         return f"Name: {gym.name}, Address: {gym.address}, Opening Times: {gym.opening_times}"
 
-
-class Sesh:
-    """Detials for each session successfully completed"""
-
-    def __init__(
-        self, participants: list, machines: list, booking_date: str, session_date: str
-    ):
-        self.participants = participants
-        self.machines = machines
-        self.booking_date = booking_date
-        self.session_date = session_date
-
-
-class SeshService:
-    """methods for creating sessions"""
-
-    def create_session(
-        participants: list, machines: list, booking_date: str, session_date: str
-    ):
-        new_session = Sesh(
-            participants=participants,
-            machines=machines,
-            booking_date=booking_date,
-            session_date=session_date,
-        )
-        return new_session
