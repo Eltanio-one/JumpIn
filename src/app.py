@@ -24,7 +24,7 @@ import sys
 import os
 import requests
 from flask_socketio import SocketIO, join_room, leave_room, send
-from keys import SITE_KEY, SECRET_KEY
+from keys import SITE_KEY, SECRET_KEY, APP_SECRET
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
@@ -39,7 +39,7 @@ VERIFY_URL = "https://www.google.com/recaptcha/api/siteverify"
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 app.config["SESSION_COOKIE_NAME"] = "Cookie"
-app.config["SECRET_KEY"] = "secret!"
+app.config["SECRET_KEY"] = APP_SECRET
 Session(app)
 socketio = SocketIO(app)
 socketio.init_app(app, cors_allowed_origins="*")
